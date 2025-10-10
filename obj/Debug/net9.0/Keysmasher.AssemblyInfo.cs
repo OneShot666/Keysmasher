@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Keysmasher")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cfee1772531d124e1fe0bce373ee698f5b1751f9")]
 [assembly: System.Reflection.AssemblyProductAttribute("Keysmasher")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Keysmasher")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
