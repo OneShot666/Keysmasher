@@ -1,18 +1,17 @@
-﻿using MongoDB.Driver;
+﻿using System.Text.Json;
 
-// ! Make API and backend server (online) -> use Render (separate it from game code)
-// L Transform project into .exe
-#pragma warning disable CS8600                                                  // Disable possible null object warnings
-#pragma warning disable CS8601
-namespace Gameplay;
+// ! Add API and backend server online -> use Render
+// L Transform project into .exe and/or a website
+namespace Gameplay;                                                             // Avoid ambiguity with api
 public class MainProgram {
     public string game_name = "Key smasher";
     private Player? joueur;
     private string player_name = "";
     private readonly ServerService server = new();
+    private readonly string save_path = "Saves/";
     private readonly int min_username = 3;
     private readonly int max_username = 15;
-    private readonly int min_password = 6;
+    private readonly int min_password = 6;                                      // No max lenght for password for now
 
     public static void Main() {                                                 // Cmd admin : 'dotnet run' to launch (for now)
         new MainProgram().Menu();
@@ -68,6 +67,44 @@ public class MainProgram {
         }
     }
 
+    private void AskName() {
+        do {
+            Console.Write("\nVotre nom : ");
+            player_name = Console.ReadLine()?.Trim() ?? "";
+            if (player_name.Length < min_username || player_name.Length > max_username)
+                Console.WriteLine("Le pseudo doit contenir entre 3 et 15 caractères !");
+        } while (player_name.Length < min_username || player_name.Length > max_username);
+    }
+
+    private string AskHiddenPassword(string prompt = "\nMot de passe : ") {
+        string password = "";
+        do {
+            Console.Write(prompt);
+            ConsoleKeyInfo key;
+
+            while (true) {
+                key = Console.ReadKey(intercept: true);
+
+                if (key.Key == ConsoleKey.Enter) {                              // Confirm password
+                    if (password.Length < min_password)
+                        Console.WriteLine("\nLe mot de passe est trop court !");
+                    else Console.WriteLine();
+                    break;
+                } else if (key.Key == ConsoleKey.Backspace) {                   // Remove last char
+                    if (password.Length > 0) {
+                        password = password[..^1];
+                        Console.Write("\b \b");
+                    }
+                } else {                                                        // Display hidden char
+                    password += key.KeyChar;
+                    Console.Write("*");
+                }
+            }
+        } while(password.Length < min_password);
+
+        return password;
+    }
+
     private void CreateProfile() {
         AskName();
 
@@ -116,9 +153,26 @@ public class MainProgram {
         AskName();
         string password = AskHiddenPassword();
 
-        joueur = server.LoadPlayer(player_name, password);
+        Player? local = LoadLocal();
+        string name = (local == null) ? "" : local.Nom;
+        joueur = server.LoadPlayer(name, password);
         if (joueur != null) joueur.Present();
         Console.ReadKey();
+    }
+
+    private Player? LoadLocal() {                                               // Load player json file data
+        if (joueur == null) return null;
+
+        string chemin = Path.Combine(save_path, $"{joueur.Nom}.json");
+        if (!File.Exists(chemin)) return null;                                  // If save folder/file doesn't exists
+
+        try {
+            string contenu = File.ReadAllText(chemin);
+            return JsonSerializer.Deserialize<Player>(contenu);                 // Return player instance
+        } catch (Exception e) {
+            Console.WriteLine($"Erreur lecture fichier local : {e.Message}");
+            return null;
+        }
     }
 
     private void Play() {
@@ -159,7 +213,8 @@ public class MainProgram {
     public void ShowLeaderboard(int limit = 5) {
         Console.WriteLine("\n===== LEADERBOARD =====\n");
 
-        List<Player> topPlayers = server.GetTopPlayers(limit);
+        List<Player>? topPlayers = server.GetTopPlayers(limit);
+        if (topPlayers == null) return;                                         // ! Add error message
 
         if (topPlayers.Count == 0) {
             Console.WriteLine("Aucun joueur trouvé !");
@@ -193,49 +248,40 @@ public class MainProgram {
     private void Save() {
         if (joueur == null) return;
 
-        server.SavePlayer(joueur);
+        SaveLocal();
+        SaveOnline();
         Console.ReadKey();
+    }
+
+    private void SaveLocal() {                                                  // Create or update json file (player data)
+        if (joueur == null) return;
+
+        Directory.CreateDirectory(save_path);                                   // Create directory if doesn't exists
+        string chemin = Path.Combine(save_path, $"{joueur.Nom}.json");
+        string json = JsonSerializer.Serialize(joueur, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText(chemin, json);
+        Console.WriteLine($"Partie sauvegardée !");
+    }
+
+    private bool SaveOnline() {                                                 // Send json file to database
+        if (joueur == null) return false;
+
+        var local = LoadLocal();
+        if (local == null) {
+            Console.WriteLine("Aucune sauvegarde pour le moment.");
+            return false;
+        }
+
+        try {
+            server.SavePlayer(local);
+            return true;
+        } catch (Exception e) {
+            Console.WriteLine($"Erreur lors de la sauvegarde : {e.Message}");
+            return false;
+        }
     }
 
     private void Quit() {
         Save();                                                                 // Auto save before leaving game
-    }
-
-    private void AskName() {
-        do {
-            Console.Write("\nVotre nom : ");
-            player_name = Console.ReadLine()?.Trim() ?? "";
-            if (player_name.Length < min_username || player_name.Length > max_username)
-                Console.WriteLine("Le pseudo doit contenir entre 3 et 15 caractères !");
-        } while (player_name.Length < min_username || player_name.Length > max_username);
-    }
-
-    private string AskHiddenPassword(string prompt = "\nMot de passe : ") {
-        string password = "";
-        do {
-            Console.Write(prompt);
-            ConsoleKeyInfo key;
-
-            while (true) {
-                key = Console.ReadKey(intercept: true);
-
-                if (key.Key == ConsoleKey.Enter) {                              // Confirm password
-                    if (password.Length < min_password)
-                        Console.WriteLine("\nLe mot de passe est trop court !");
-                    else Console.WriteLine();
-                    break;
-                } else if (key.Key == ConsoleKey.Backspace) {                   // Remove last char
-                    if (password.Length > 0) {
-                        password = password[..^1];
-                        Console.Write("\b \b");
-                    }
-                } else {                                                        // Display hidden char
-                    password += key.KeyChar;
-                    Console.Write("*");
-                }
-            }
-        } while(password.Length < min_password);
-
-        return password;
     }
 }
