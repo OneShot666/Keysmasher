@@ -1,0 +1,92 @@
+# Query: PersistantData
+# ContextLines: 1
+
+66 résultats - Fichiers 8
+
+Keysmasher.sln:
+  4  MinimumVisualStudioVersion = 10.0.40219.1
+  5: Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keysmasher", "Keysmasher.csproj", "{78125483-02B1-3387-B2E3-87C4CE824A75}"
+  6  EndProject
+
+bin\Debug\net9.0\Keysmasher.deps.json:
+    8      ".NETCoreApp,Version=v9.0": {
+    9:       "Keysmasher/1.0.0": {
+   10          "dependencies": {
+
+   13          "runtime": {
+   14:           "Keysmasher.dll": {}
+   15          }
+
+  108    "libraries": {
+  109:     "Keysmasher/1.0.0": {
+  110        "type": "project",
+
+obj\Keysmasher.csproj.nuget.dgspec.json:
+   3    "restore": {
+   4:     "C:\\High school\\Matières 12 025\\Données\\Keysmasher\\Keysmasher.csproj": {}
+   5    },
+   6    "projects": {
+   7:     "C:\\High school\\Matières 12 025\\Données\\Keysmasher\\Keysmasher.csproj": {
+   8        "version": "1.0.0",
+   9        "restore": {
+  10:         "projectUniqueName": "C:\\High school\\Matières 12 025\\Données\\Keysmasher\\Keysmasher.csproj",
+  11:         "projectName": "Keysmasher",
+  12:         "projectPath": "C:\\High school\\Matières 12 025\\Données\\Keysmasher\\Keysmasher.csproj",
+  13          "packagesPath": "C:\\Users\\One Shot\\.nuget\\packages\\",
+  14:         "outputPath": "C:\\High school\\Matières 12 025\\Données\\PersistantData\\obj\\",
+  15          "projectStyle": "PackageReference",
+
+obj\project.assets.json:
+  607      "restore": {
+  608:       "projectUniqueName": "C:\\High school\\Matières 12 025\\Données\\PersistantData\\PersistantData.csproj",
+  609:       "projectName": "PersistantData",
+  610:       "projectPath": "C:\\High school\\Matières 12 025\\Données\\PersistantData\\PersistantData.csproj",
+  611        "packagesPath": "C:\\Users\\One Shot\\.nuget\\packages\\",
+  612:       "outputPath": "C:\\High school\\Matières 12 025\\Données\\PersistantData\\obj\\",
+  613        "projectStyle": "PackageReference",
+
+obj\project.nuget.cache:
+  4    "success": true,
+  5:   "projectFilePath": "C:\\High school\\Matières 12 025\\Données\\PersistantData\\PersistantData.csproj",
+  6    "expectedPackageFiles": [
+
+obj\Debug\net9.0\PersistantData.AssemblyInfo.cs:
+  12  
+  13: [assembly: System.Reflection.AssemblyCompanyAttribute("PersistantData")]
+  14  [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
+
+  16  [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+  17: [assembly: System.Reflection.AssemblyProductAttribute("PersistantData")]
+  18: [assembly: System.Reflection.AssemblyTitleAttribute("PersistantData")]
+  19  [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
+
+obj\Debug\net9.0\PersistantData.csproj.FileListAbsolute.txt:
+   1: C:\High school\Matières 12 025\Données\PersistantData\obj\Debug\net9.0\PersistantData.GeneratedMSBuildEditorConfig.editorconfig
+   2: C:\High school\Matières 12 025\Données\PersistantData\obj\Debug\net9.0\PersistantData.AssemblyInfoInputs.cache
+   3: C:\High school\Matières 12 025\Données\PersistantData\obj\Debug\net9.0\PersistantData.AssemblyInfo.cs
+   4: C:\High school\Matières 12 025\Données\PersistantData\obj\Debug\net9.0\PersistantData.csproj.CoreCompileInputs.cache
+   5: C:\High school\Matières 12 025\Données\PersistantData\bin\Debug\net9.0\PersistantData.exe
+   6: C:\High school\Matières 12 025\Données\PersistantData\bin\Debug\net9.0\PersistantData.deps.json
+   7: C:\High school\Matières 12 025\Données\PersistantData\bin\Debug\net9.0\PersistantData.runtimeconfig.json
+   8: C:\High school\Matières 12 025\Données\PersistantData\bin\Debug\net9.0\PersistantData.dll
+   9: C:\High school\Matières 12 025\Données\PersistantData\bin\Debug\net9.0\PersistantData.pdb
+  10: C:\High school\Matières 12 025\Données\PersistantData\obj\Debug\net9.0\PersistantData.dll
+  11: C:\High school\Matières 12 025\Données\PersistantData\obj\Debug\net9.0\refint\PersistantData.dll
+  12: C:\High school\Matières 12 025\Données\PersistantData\obj\Debug\net9.0\PersistantData.pdb
+  13: C:\High school\Matières 12 025\Données\PersistantData\obj\Debug\net9.0\PersistantData.genruntimeconfig.cache
+  14: C:\High school\Matières 12 025\Données\PersistantData\obj\Debug\net9.0\ref\PersistantData.dll
+  15: C:\High school\Matières 12 025\Données\PersistantData\bin\Debug\net9.0\DnsClient.dll
+  16: C:\High school\Matières 12 025\Données\PersistantData\bin\Debug\net9.0\Microsoft.Extensions.Logging.Abstractions.dll
+  17: C:\High school\Matières 12 025\Données\PersistantData\bin\Debug\net9.0\MongoDB.Bson.dll
+  18: C:\High school\Matières 12 025\Données\PersistantData\bin\Debug\net9.0\MongoDB.Driver.dll
+  19: C:\High school\Matières 12 025\Données\PersistantData\bin\Debug\net9.0\SharpCompress.dll
+  20: C:\High school\Matières 12 025\Données\PersistantData\bin\Debug\net9.0\Snappier.dll
+  21: C:\High school\Matières 12 025\Données\PersistantData\bin\Debug\net9.0\ZstdSharp.dll
+  22: C:\High school\Matières 12 025\Données\PersistantData\obj\Debug\net9.0\PersistantData.csproj.AssemblyReference.cache
+  23: C:\High school\Matières 12 025\Données\PersistantData\obj\Debug\net9.0\Persista.B432DCC5.Up2Date
+
+obj\Debug\net9.0\PersistantData.GeneratedMSBuildEditorConfig.editorconfig:
+   9  build_property._SupportedPlatformList = Linux,macOS,Windows
+  10: build_property.RootNamespace = PersistantData
+  11: build_property.ProjectDir = C:\High school\Matières 12 025\Données\PersistantData\
+  12  build_property.EnableComHosting = 
