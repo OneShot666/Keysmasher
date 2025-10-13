@@ -28,32 +28,31 @@ public class ServerService {
     public List<Player>? GetTopPlayers(int limit = 5) {                         // Get top 5 players by default
         if (_players == null) return null;
         return _players.Find(FilterDefinition<Player>.Empty)
-            .SortByDescending(p => p.Score).Limit(limit).ToList();
+            .SortByDescending(p => p.score).Limit(limit).ToList();
     }
 
     public bool IsPlayerSynced(Player localPlayer) {                            // Only compare important data
         if (_players == null) return false;
-        var dbPlayer = _players.Find(p => p.Nom == localPlayer.Nom).FirstOrDefault();
+        var dbPlayer = _players.Find(p => p.name == localPlayer.name).FirstOrDefault();
         if (dbPlayer == null) return false;
-        return dbPlayer.Score == localPlayer.Score && dbPlayer.Niveau == localPlayer.Niveau;
+        return dbPlayer.score == localPlayer.score && dbPlayer.level == localPlayer.level;
     }
 
     public Player? FindPlayerByName(string name) {
         if (_players == null) return null;
-        return _players.Find(p => p.Nom == name).FirstOrDefault();
+        return _players.Find(p => p.name == name).FirstOrDefault();
     }
 
-    public Player? LoadPlayer(string nom, string password) {                    // Load from db
-        if (_players == null) return null;
-        var joueur = _players.Find(p => p.Nom == nom).FirstOrDefault();
-        if (joueur == null) {
-            Console.WriteLine("Aucun joueur trouvé avec ce nom.");
-            return null;
-        }
+    public Player LoadPlayer(string nom, string password) {                    // Load from db
+        if (_players == null) return new();
 
-        if (!CryptoUtils.VerifyPassword(password, joueur.Salt, joueur.PasswordHash)) {
+        var joueur = _players.Find(p => p.name == nom).FirstOrDefault();
+        if (joueur == null) {                                                   // Player not found
+            Console.WriteLine("Aucun joueur trouvé avec ce nom.");
+            return new();
+        } else if (!CryptoUtils.VerifyPassword(password, joueur.Salt, joueur.PasswordHash)) {
             Console.WriteLine("Mot de passe incorrect !");
-            return null;
+            return new();
         }
 
         Console.WriteLine("Connexion réussie !");
@@ -62,16 +61,16 @@ public class ServerService {
 
     public void SavePlayer(Player joueur) {                                     // Save in db
         if (_players == null) return;
-        var existing = _players.Find(p => p.Nom == joueur.Nom).FirstOrDefault();
+        var existing = _players.Find(p => p.name == joueur.name).FirstOrDefault();
         if (existing != null) {
             joueur.id = existing.id;                                            // Keep the same id
-            joueur.Score = (int) MathF.Max(joueur.Score, existing.Score);       // Keep best score and lvl
-            joueur.Niveau = (int) MathF.Max(joueur.Niveau, existing.Niveau);
-            _players.ReplaceOne(p => p.Nom == joueur.Nom, joueur);
-            Console.WriteLine($"Profil '{joueur.Nom}' mis à jour !");
+            joueur.score = (int) MathF.Max(joueur.score, existing.score);       // Keep best score and lvl
+            joueur.level = (int) MathF.Max(joueur.level, existing.level);
+            _players.ReplaceOne(p => p.name == joueur.name, joueur);
+            Console.WriteLine($"Profil '{joueur.name}' mis à jour !");
         } else {
             _players.InsertOne(joueur);
-            Console.WriteLine($"Profil '{joueur.Nom}' créé !");
+            Console.WriteLine($"Profil '{joueur.name}' créé !");
         }
     }
 }
