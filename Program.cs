@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 
-// . Write all texts in english
-// ? Make WriteError function for text in red
+// . Add 'Saves' table in db and connect them to player -> make Save class
 // ! Add API and backend server online -> use Render
 // L Transform project into .exe and/or a website
 namespace Gameplay;                                                             // Avoid ambiguity with api
@@ -22,46 +21,44 @@ public class MainProgram {                                                      
             Console.Clear();                                                    // Messages from Connect() won't be visible
             Console.WriteLine("===== MENU =====");
             if (gameplay.player == null) {
-                Console.WriteLine("1 - Créer un compte");
-                Console.WriteLine("2 - Charger un compte");
-                Console.WriteLine("3 - Quitter");
-                Console.Write("\nVotre choix : ");
+                Console.WriteLine("1 - Create an account");
+                Console.WriteLine("2 - Load an account");
+                Console.WriteLine("3 - Quit");
             } else {                                                            // If connected
-                Console.WriteLine("1 - Afficher mon profile");
-                Console.WriteLine("2 - Créer un nouveau profile");
-                Console.WriteLine("3 - Charger un autre profile");
-                Console.WriteLine("4 - Jouer");
-                Console.WriteLine("5 - Afficher le leaderboard");
-                Console.WriteLine("6 - Sauvegarder");
-                Console.WriteLine("7 - Quitter");
-                Console.Write("\nVotre choix : ");
+                Console.WriteLine("1 - Show profile");
+                Console.WriteLine("2 - Create a new account");
+                Console.WriteLine("3 - Load a new account");
+                Console.WriteLine("4 - Play");
+                Console.WriteLine("5 - Show leaderboard");
+                Console.WriteLine("6 - Save");
+                Console.WriteLine("7 - Quit");
             }
 
-            string? choice = Console.ReadLine();
+            int choice = Gameplay.AskIntChoice();                               // Get input integer
 
             if (gameplay.player == null) {
                 switch (choice) {
-                    case "1": CreateProfile(); break;
-                    case "2": Load(); break;
-                    case "3": Quit(); return;
+                    case 1: CreateProfile(); break;
+                    case 2: Load(); break;
+                    case 3: Quit(); return;
                     default:
-                        Console.WriteLine("Choix invalide !");
+                        WriteColoredMessage("Incorrect choice !");
                         Console.ReadKey();
                         break;
                 }
             } else {                                                            // If connected
                 switch (choice) {
-                    case "1": gameplay.player.Present(); Console.ReadKey(); break;
-                    case "2": CreateProfile(); break;
-                    case "3": Load(); break;
-                    case "4": Play(); break;
-                    case "5": ShowLeaderboard(); break;
-                    case "6": Save(); break;
-                    case "7": Quit(); return;
-                default:
-                    Console.WriteLine("Choix invalide !");
-                    Console.ReadKey();
-                    break;
+                    case 1: gameplay.player.Present(); Console.ReadKey(); break;
+                    case 2: CreateProfile(); break;
+                    case 3: Load(); break;
+                    case 4: Play(); break;
+                    case 5: ShowLeaderboard(); break;
+                    case 6: Save(); break;
+                    case 7: Quit(); return;
+                    default:
+                        WriteColoredMessage("Incorrect choice !");
+                        Console.ReadKey();
+                        break;
                 }
             }
         }
@@ -75,11 +72,11 @@ public class MainProgram {                                                      
         else {                                                                  // Create password
             string password, confirm;
             do {
-                password = gameplay.AskHiddenPassword("Choisissez un mot de passe : ");
-                confirm =  gameplay.AskHiddenPassword("Confirmez le mot de passe  : ");
+                password = gameplay.AskHiddenPassword("Choose a password : ");
+                confirm =  gameplay.AskHiddenPassword("Confirm password  : ");
 
                 if (password != confirm)
-                    Console.WriteLine("Les mots de passe ne correspondent pas, veuillez réessayer.\n");
+                    WriteColoredMessage("Passwords doesn't match, please try again.\n", ConsoleColor.Yellow);
             } while (password != confirm);
 
             string salt = CryptoUtils.GenerateSalt();
@@ -93,8 +90,8 @@ public class MainProgram {                                                      
     }
 
     private void ConnectProfile(Player existing) {
-        Console.WriteLine($"\nUn profil avec le nom '{gameplay.player_name}' existe déjà.");
-        Console.Write("Souhaitez-vous vous connecter à ce profil ? (O/N) : ");
+        Console.WriteLine($"\nA profile with username '{gameplay.player_name}' already exists.");
+        Console.Write("Do you want to connect to this profile ? (O/N) : ");
 
         if (Console.ReadKey().Key == ConsoleKey.O) {
             string password = gameplay.AskHiddenPassword();
@@ -102,13 +99,13 @@ public class MainProgram {                                                      
 
             if (hashedInput == existing.PasswordHash) {
                 gameplay.player = existing;
-                Console.WriteLine("\nConnexion réussie !");
+                WriteColoredMessage("\nConnection successful !", ConsoleColor.Green);
                 gameplay.player.Present();
             } else {
-                Console.WriteLine("\nMot de passe incorrect !");
+                WriteColoredMessage("\nIncorrect password !");
                 gameplay.player = new();
             }
-        } else Console.WriteLine("\nVeuillez choisir un autre nom de joueur.");
+        } else Console.WriteLine("\nPlease choose another username.");
     }
 
     private void Load() {
@@ -132,16 +129,16 @@ public class MainProgram {                                                      
             string contenu = File.ReadAllText(chemin);
             return JsonSerializer.Deserialize<Player>(contenu);                 // Return player instance
         } catch (Exception e) {
-            Console.WriteLine($"Erreur de lecture du fichier local : {e.Message}");
+            WriteColoredMessage($"Error while reading local save : {e.Message}");
             return null;
         }
     }
 
     private void Play() {
         if (gameplay.player == null) {
-            Console.WriteLine("Aucun profil connecté !");
-            Console.WriteLine("Veuillez vous connecter avec 'Créer un compte' [1] " +
-                "ou 'Charger un compte' [2] pour jouer.");
+            WriteColoredMessage("You're not connected !", ConsoleColor.Yellow);
+            Console.WriteLine("Please connect with 'Create an account' [1] " +
+                "or 'Load an account' [2] to play.");
             Console.ReadKey();
             return;
         }
@@ -156,29 +153,24 @@ public class MainProgram {                                                      
         if (topPlayers == null) return;                                         // ! Add error message
 
         if (topPlayers.Count == 0) {
-            Console.WriteLine("Aucun joueur trouvé !");
+            WriteColoredMessage("No player found for leaderboard.", ConsoleColor.Yellow);
+            Console.WriteLine("Save your progress and become Top 1 !");
             return;
         }
 
         int rank = 1;
         foreach (Player p in topPlayers) {
-            Console.WriteLine($"{rank,2}. {p.name,-15} | Score : {p.score,5} | Niveau : {p.level}");
+            Console.WriteLine($"{rank,2}. {p.name,-15} | Score : {p.score,5} | Level : {p.level}");
             rank++;
         }
 
         Console.WriteLine("\n" + new string('=', 25));
 
         if (gameplay.player != null) {
-            bool synced = server.IsPlayerSynced(gameplay.player);
-            if (!synced) {                                                      // Check if player is up-to-date
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"Vos données en ligne ne sont pas à jour !");
-                Console.WriteLine("Pensez à sauvegarder [6] pour synchroniser votre progrès.");
-            } else {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"Profil à jour");
-            }
-            Console.ResetColor();
+            bool synced = server.IsPlayerSynced(gameplay.player);               // Check if player is up-to-date
+            if (!synced) WriteColoredMessage("Your online data is out of date!" +
+                "\nRemember to save [6] to synchronize your progress.", ConsoleColor.Yellow);
+            else WriteColoredMessage("Profile is updated", ConsoleColor.Green);
         }
 
         Console.ReadKey();
@@ -199,7 +191,7 @@ public class MainProgram {                                                      
         string chemin = Path.Combine(save_path, $"{gameplay.player.name}.json");
         string json = JsonSerializer.Serialize(gameplay.player, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(chemin, json);
-        Console.WriteLine($"Partie sauvegardée !");
+        WriteColoredMessage("Profile saved !", ConsoleColor.Green);
     }
 
     private bool SaveOnline() {                                                 // Send json file to database
@@ -207,7 +199,7 @@ public class MainProgram {                                                      
 
         Player? local = LoadLocal();
         if (local == null) {
-            Console.WriteLine("Aucune sauvegarde pour le moment.");
+            WriteColoredMessage("No local save for now", ConsoleColor.Yellow);
             return false;
         }
 
@@ -215,9 +207,15 @@ public class MainProgram {                                                      
             server.SavePlayer(local);
             return true;
         } catch (Exception e) {
-            Console.WriteLine($"Erreur lors de la sauvegarde : {e.Message}");
+            WriteColoredMessage($"Error while saving : {e.Message}");
             return false;
         }
+    }
+
+    public static void WriteColoredMessage(string message, ConsoleColor color = ConsoleColor.Red) {
+        Console.ForegroundColor = color;
+        Console.WriteLine(message);
+        Console.ResetColor();
     }
 
     private void Quit() {

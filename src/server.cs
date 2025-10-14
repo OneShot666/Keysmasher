@@ -6,12 +6,12 @@ public class ServerService {
     private readonly IMongoDatabase? _database;
     private readonly IMongoCollection<Player>? _players;
 
-    // ! Will be updated when servers are fully online (allow offline mode)
+    // ? Will be updated when servers are fully online (allow offline mode)
     public ServerService() {
         var client = new MongoClient("mongodb://localhost:27017");
         try {
             _database = client.GetDatabase(db_name);
-            Console.WriteLine("Connection to database established !");
+            MainProgram.WriteColoredMessage("Connection to database established !", ConsoleColor.Green);
         } catch (Exception e) {
             throw new ArgumentException($"Error while connecting to database : {e.Message}");
         }
@@ -19,7 +19,7 @@ public class ServerService {
         var collections = _database.ListCollectionNames().ToList();
         if (!collections.Contains("Players")) {
             _database.CreateCollection("Players");
-            Console.WriteLine("Collection 'Players' created successfully !");
+            MainProgram.WriteColoredMessage("Collection 'Players' created successfully !", ConsoleColor.Green);
         }
 
         _players = _database.GetCollection<Player>("Players");
@@ -48,14 +48,14 @@ public class ServerService {
 
         var joueur = _players.Find(p => p.name == nom).FirstOrDefault();
         if (joueur == null) {                                                   // Player not found
-            Console.WriteLine("Aucun joueur trouvé avec ce nom.");
+            MainProgram.WriteColoredMessage("No user found with this username.", ConsoleColor.Yellow);
             return new();
         } else if (!CryptoUtils.VerifyPassword(password, joueur.Salt, joueur.PasswordHash)) {
-            Console.WriteLine("Mot de passe incorrect !");
+            MainProgram.WriteColoredMessage("Incorrect password !");
             return new();
         }
 
-        Console.WriteLine("Connexion réussie !");
+        MainProgram.WriteColoredMessage("Connection successful !", ConsoleColor.Green);
         return joueur;
     }
 
@@ -67,10 +67,10 @@ public class ServerService {
             joueur.score = (int) MathF.Max(joueur.score, existing.score);       // Keep best score and lvl
             joueur.level = (int) MathF.Max(joueur.level, existing.level);
             _players.ReplaceOne(p => p.name == joueur.name, joueur);
-            Console.WriteLine($"Profil '{joueur.name}' mis à jour !");
+            MainProgram.WriteColoredMessage($"Profile '{joueur.name}' updated !", ConsoleColor.Green);
         } else {
             _players.InsertOne(joueur);
-            Console.WriteLine($"Profil '{joueur.name}' créé !");
+            MainProgram.WriteColoredMessage($"Profile '{joueur.name}' created !", ConsoleColor.Green);
         }
     }
 }
