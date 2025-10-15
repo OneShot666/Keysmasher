@@ -1,16 +1,17 @@
 ﻿using System.Text.Json;
 
-// . Check new structure work : launch program
+// . Everything seems to work, check small tasks in other programs before continue
+// ! Maybe a clone pb when saving in db -> use id instead ?
 // ! Add API and backend server online -> use Render
 // L Transform project into .exe and/or a website
 namespace Gameplay;                                                             // Avoid ambiguity with api
 public class MainProgram {                                                      // Manage server and saves
-    public string game_name = "Key smasher";
-    private User? user;
-    public string user_name = "";
-    private readonly Gameplay gameplay = new();                                 // Manage player
-    private readonly ServerService server = new();                              // Manage database
+    private string game_name = "Key smasher";
     private readonly string save_path = "Saves/";
+    private readonly ServerService server = new();                              // Manage database
+    private readonly Gameplay gameplay = new();                                 // Manage player
+    private User? user;
+    private string user_name = "";
     private readonly int min_username = 3;
     private readonly int max_username = 15;
     private readonly int min_password = 6;                                      // No max lenght for password for now
@@ -21,9 +22,10 @@ public class MainProgram {                                                      
 
     private void Menu() {
         Console.Title = game_name;                                              // Rename console
+        Directory.CreateDirectory(save_path);                                   // Create directory if doesn't exists
 
         while (true) {
-            Console.Clear();                                                    // Messages from Connect() won't be visible
+            Console.Clear();                                                    // Messages from server won't be visible
             Console.WriteLine("===== MENU =====");
             if (user == null) {
                 Console.WriteLine("1 - Create an account");
@@ -43,8 +45,8 @@ public class MainProgram {                                                      
 
             if (user == null || gameplay.player == null) {
                 switch (choice) {
-                    case 1: CreateProfile(); break;
-                    case 2: Load(); break;
+                    case 1: CreateUser(); break;
+                    case 2: LoadUser(); break;
                     case 3: Quit(); return;
                     default:
                         WriteColoredMessage("Incorrect choice !");
@@ -53,8 +55,8 @@ public class MainProgram {                                                      
             } else {                                                            // If connected
                 switch (choice) {
                     case 1: gameplay.player.Present(); break;
-                    case 2: CreateProfile(); break;
-                    case 3: Load(); break;
+                    case 2: CreateUser(); break;
+                    case 3: LoadUser(); break;
                     case 4: Play(); break;
                     case 5: ShowLeaderboard(); break;
                     case 6: Save(); break;
@@ -106,7 +108,7 @@ public class MainProgram {                                                      
         return password;
     }
 
-    private void CreateProfile() {
+    private void CreateUser() {
         AskUsername();
 
         User? existing = server.GetUserByUsername(user_name);
@@ -141,18 +143,19 @@ public class MainProgram {                                                      
         string hashedInput = CryptoUtils.HashPassword(password, existing.Salt);
 
         if (hashedInput == existing.PasswordHash) {
+            user = existing;
             gameplay.player = server.GetPlayerByName(existing.Username);
-            if (gameplay.player == null) return;                            // Shouldn't happened
             WriteColoredMessage("\nConnection successful !", ConsoleColor.Green);
+            if (gameplay.player == null) return;                                // Shouldn't happen
             gameplay.player.Present();
         } else {
-            WriteColoredMessage("\nIncorrect password !");
             user = null;
             gameplay.player = null;
+            WriteColoredMessage("\nIncorrect password !");
         }
     }
 
-    private void Load() {
+    private void LoadUser() {
         AskUsername();
         Player? local = LoadLocal();
         string name = (local == null) ? user_name : local.Name;                 // User and player should have same name
@@ -163,12 +166,13 @@ public class MainProgram {                                                      
     private Player? LoadLocal() {                                               // Load player json file data
         if (user_name == null) return null;
 
-        string chemin = Path.Combine(save_path, $"{user_name}.json");
-        if (!File.Exists(chemin)) return null;                                  // If local save doesn't exists
+        string path = Path.Combine(save_path, $"{user_name}.json");
+        if (!File.Exists(path)) return null;                                    // If local save doesn't exists
 
         try {
-            string contenu = File.ReadAllText(chemin);
-            return JsonSerializer.Deserialize<Player>(contenu);                 // Return player instance
+            string contenu = File.ReadAllText(path);
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true }; // Ignore case sensitivity
+            return JsonSerializer.Deserialize<Player>(contenu, options);        // Return player instance
         } catch (Exception e) {
             WriteColoredMessage($"Error while reading local save : {e.Message}");
             return null;
@@ -224,10 +228,9 @@ public class MainProgram {                                                      
     private void SaveLocal() {                                                  // Create or update json file (player data)
         if (gameplay.player == null) return;
 
-        Directory.CreateDirectory(save_path);                                   // Create directory if doesn't exists
-        string chemin = Path.Combine(save_path, $"{user_name}.json");
+        string path = Path.Combine(save_path, $"{user_name}.json");
         string json = JsonSerializer.Serialize(gameplay.player, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(chemin, json);
+        File.WriteAllText(path, json);
         WriteColoredMessage("Profile saved !", ConsoleColor.Green);             // Locally
     }
 

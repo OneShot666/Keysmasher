@@ -1,6 +1,7 @@
 ﻿namespace Gameplay;
 public class Gameplay {                                                         // Manage player
     public bool running = false;
+    public Save? save;                                                          // Use, load and save it (in MainProgram)
     public Player? player;
     public string player_name = "";
     public Enemy? enemy;
@@ -12,7 +13,7 @@ public class Gameplay {                                                         
         while (running) {
             Console.WriteLine("\n===== ACTIONS =====");
             Console.WriteLine("1 - Start a fight");
-            Console.WriteLine("2 - Heal");
+            Console.WriteLine("2 - Heal" + (player.hasPotion ? "" : " (potion required)"));
             Console.WriteLine("3 - Open inventory");
             Console.WriteLine("4 - Show profile");
             Console.WriteLine("5 - Save");
@@ -30,6 +31,7 @@ public class Gameplay {                                                         
                     MainProgram.WriteColoredMessage("Incorrect choice !");
                     break;
             }
+            Console.ReadKey();
         }
     }
 
@@ -50,7 +52,9 @@ public class Gameplay {                                                         
 
         var rnd = new Random();
         while (enemy.Hp > 0 && player.Hp > 0) {
-            Console.WriteLine($"\n{player.Name} HP: {player.Hp}/{player.MaxHp} | {enemy.Name} HP: {enemy.Hp}");
+            Thread.Sleep(1000);                                                 // Wait a second
+            Console.WriteLine($"\n{player.Name} HP: {player.Hp}/{player.MaxHp}" +
+                $" | {enemy.Name} HP: {enemy.Hp}/{enemy.MaxHp}");
             Console.WriteLine("1 Attack  2 Defend  3 Heal  4 Flee");
             int action = AskIntChoice("Action : ");
 
@@ -97,6 +101,7 @@ public class Gameplay {                                                         
         if (rnd.NextDouble() < 0.4) {                                           // 40% chance to drop a potion
             Console.WriteLine("You find a 'Potion' on the enemy !");
             player.Inventory.Add("Potion");
+            player.hasPotion = true;
         }
     }
 }

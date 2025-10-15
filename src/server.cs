@@ -35,6 +35,10 @@ public class ServerService {
     }
 
     /* ----- USERS ----- */
+    public User? GetUserById(ObjectId userId) {                                 // Load user (to find player's user)
+        return _users.Find(p => p.id == userId).FirstOrDefault();
+    }
+
     public User? GetUserByUsername(string username) {                           // Load user
         return _users.Find(u => u.Username == username).FirstOrDefault();
     }
@@ -77,16 +81,8 @@ public class ServerService {
         return dbPlayer.Score == localPlayer.Score && dbPlayer.Level == localPlayer.Level;
     }
 
-    public Player? GetPlayerByUserId(ObjectId userId) {                         // ? Get user by user id
-        return _players.Find(p => p.UserId == userId).FirstOrDefault();
-    }
-
     public Player? GetPlayerByName(string name) {                               // Load player
         return _players.Find(p => p.Name == name).FirstOrDefault();
-    }
-
-    public Player LoadPlayer(string nom, string password) {
-        return _players.Find(p => p.Name == nom).FirstOrDefault();
     }
 
     public void SavePlayer(Player player) {

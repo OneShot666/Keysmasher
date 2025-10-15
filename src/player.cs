@@ -1,22 +1,31 @@
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
 
+// L Add CollectItem(string name) & UseItem(string name) functions
 // L Player can only use defensive posture if has a shield
 namespace Gameplay;
 public class Player : Entity {
     [BsonRepresentation(BsonType.ObjectId)]
     public ObjectId UserId { get; set; }                                        // foreign key to user
     private bool is_defending = false;
+    public bool hasPotion = true;
+    private const int healAmount = 50;
     public int Score { get; set; } = 0;                                         // Based on xp
     public int Xp { get; set; } = 0;
     public int MaxXp { get; set; } = 100;                                       // To level up
     public int Gold { get; set; } = 0;
     public List<string> Inventory { get; set; } = new List<string>();
-    private const int healAmount = 50;
 
     public override string ToString() {
         return $"Player(Name='{Name}', Level={Level}, HP={Hp}, Max HP={MaxHp}, " +
             $"Score={Score}), Attack={Attack}, Defense={Defense}, Gold={Gold})";
+    }
+
+    public Player() {                                                           // Use for local saves
+        Attack = 12;
+        Defense = 5;
+        Inventory.Add("Shield");
+        Inventory.Add("Potion");
     }
 
     public Player(string name, ObjectId user_id) {
@@ -37,7 +46,8 @@ public class Player : Entity {
         Console.WriteLine($"Attack    : {Attack}");
         Console.WriteLine($"Defense   : {Defense}");
         Console.WriteLine($"Coins     : x{Gold}");
-        Console.WriteLine($"Inventory : {string.Join(", ", Inventory)}");
+        string content = (Inventory.Count > 0) ? string.Join(", ", Inventory) : "Vide";
+        Console.WriteLine($"Inventory : {content}");
     }
 
     public void GainXp(int amount) {
@@ -72,18 +82,20 @@ public class Player : Entity {
 
         Hp -= real_damage;                                                      // Get hurts
         Console.WriteLine($"You took only {real_damage} damage" +
-            (is_defending ? "thanks to your defensive posture !" : "."));
+            (is_defending ? " thanks to your defensive posture !" : "."));
         is_defending = false;                                                   // Stop defending
 
         if (Hp <= 0) Die();                                                     // If damage fatal
     }
 
     public void UsePotion() {
-        if (Inventory.Contains("Potion")) {
+        if (Hp >= MaxHp) Console.WriteLine("You're already full life !");       // Don't consume if full life
+        else if (hasPotion) {
             Inventory.Remove("Potion");
             Hp = Math.Min(MaxHp, Hp + healAmount);
-            Console.WriteLine("No heal potion available.");
-        } else Console.WriteLine($"You use a potion and heal {healAmount} HP. HP: {Hp}/{MaxHp}");
+            Console.WriteLine($"You use a potion and heal {healAmount} HP. HP: {Hp}/{MaxHp}");
+        } else Console.WriteLine("No heal potion available.");
+        hasPotion = Inventory.Contains("Potion");
     }
 
     public void ShowInventory() {

@@ -1,11 +1,24 @@
 {
+  "UserId": {
+    "Timestamp": 1760522016,
+    "CreationTime": "2025-10-15T09:53:36Z"
+  },
+  "Score": 420,
+  "Xp": 100,
+  "MaxXp": 172,
+  "Gold": 25,
+  "Inventory": [
+    "Shield",
+    "Potion"
+  ],
   "id": {
     "Timestamp": 1759829011,
     "CreationTime": "2025-10-07T09:23:31Z"
   },
-  "Nom": "One Shot",
-  "Niveau": 4,
-  "Score": 320,
-  "PasswordHash": "MS\u002BHfNrgRKTMt/eaB8MfohZqbVASRkancx073IBfvMY=",
-  "Salt": "O0FlmmjWid02/9hZgqirEg=="
+  "Name": "One Shot",
+  "Level": 4,
+  "Hp": 28,
+  "MaxHp": 140,
+  "Attack": 20,
+  "Defense": 9
 }
