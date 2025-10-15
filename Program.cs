@@ -1,14 +1,19 @@
 ﻿using System.Text.Json;
 
-// . Add 'Saves' table in db and connect them to player -> make Save class
+// . Check new structure work : launch program
 // ! Add API and backend server online -> use Render
 // L Transform project into .exe and/or a website
 namespace Gameplay;                                                             // Avoid ambiguity with api
 public class MainProgram {                                                      // Manage server and saves
     public string game_name = "Key smasher";
-    private readonly Gameplay gameplay = new();
-    private readonly ServerService server = new();
+    private User? user;
+    public string user_name = "";
+    private readonly Gameplay gameplay = new();                                 // Manage player
+    private readonly ServerService server = new();                              // Manage database
     private readonly string save_path = "Saves/";
+    private readonly int min_username = 3;
+    private readonly int max_username = 15;
+    private readonly int min_password = 6;                                      // No max lenght for password for now
 
     public static void Main() {                                                 // Cmd admin : 'dotnet run' to launch (for now)
         new MainProgram().Menu();
@@ -20,7 +25,7 @@ public class MainProgram {                                                      
         while (true) {
             Console.Clear();                                                    // Messages from Connect() won't be visible
             Console.WriteLine("===== MENU =====");
-            if (gameplay.player == null) {
+            if (user == null) {
                 Console.WriteLine("1 - Create an account");
                 Console.WriteLine("2 - Load an account");
                 Console.WriteLine("3 - Quit");
@@ -36,19 +41,18 @@ public class MainProgram {                                                      
 
             int choice = Gameplay.AskIntChoice();                               // Get input integer
 
-            if (gameplay.player == null) {
+            if (user == null || gameplay.player == null) {
                 switch (choice) {
                     case 1: CreateProfile(); break;
                     case 2: Load(); break;
                     case 3: Quit(); return;
                     default:
                         WriteColoredMessage("Incorrect choice !");
-                        Console.ReadKey();
                         break;
                 }
             } else {                                                            // If connected
                 switch (choice) {
-                    case 1: gameplay.player.Present(); Console.ReadKey(); break;
+                    case 1: gameplay.player.Present(); break;
                     case 2: CreateProfile(); break;
                     case 3: Load(); break;
                     case 4: Play(); break;
@@ -57,23 +61,66 @@ public class MainProgram {                                                      
                     case 7: Quit(); return;
                     default:
                         WriteColoredMessage("Incorrect choice !");
-                        Console.ReadKey();
                         break;
                 }
             }
+            Console.ReadKey();
         }
     }
 
-    private void CreateProfile() {
-        gameplay.AskName();
+    public void AskUsername() {
+        do {
+            Console.Write("\nUsername : ");
+            user_name = Console.ReadLine()?.Trim() ?? "";
+            if (user_name.Length < min_username || user_name.Length > max_username)
+                WriteColoredMessage("Username must contain between 3 and 15 characters!",
+                    ConsoleColor.Yellow);
+        } while (user_name.Length < min_username || user_name.Length > max_username);
+    }
 
-        Player? existing = server.FindPlayerByName(gameplay.player_name);
-        if (existing != null) ConnectProfile(existing);
-        else {                                                                  // Create password
+    public string AskHiddenPassword(string prompt = "\nPassword : ") {
+        string password = "";
+        do {
+            Console.Write(prompt);
+            ConsoleKeyInfo key;
+
+            while (true) {
+                key = Console.ReadKey(intercept: true);
+
+                if (key.Key == ConsoleKey.Enter) {                              // Confirm password
+                    if (password.Length < min_password)
+                        WriteColoredMessage("\nPassword is too short !", ConsoleColor.Yellow);
+                    break;
+                } else if (key.Key == ConsoleKey.Backspace) {                   // Remove last char
+                    if (password.Length > 0) {
+                        password = password[..^1];
+                        Console.Write("\b \b");
+                    }
+                } else {                                                        // Display hidden char
+                    password += key.KeyChar;
+                    Console.Write("*");
+                }
+            }
+        } while(password.Length < min_password);
+
+        return password;
+    }
+
+    private void CreateProfile() {
+        AskUsername();
+
+        User? existing = server.GetUserByUsername(user_name);
+        if (existing != null) {
+            Console.WriteLine($"\nA profile with username '{gameplay.player_name}' already exists.");
+            Console.Write("Do you want to connect to this profile ? (O/N) : ");
+
+            if (Console.ReadKey().Key == ConsoleKey.O) ConnectProfile(existing);
+            else Console.WriteLine("\nPlease choose another username.");
+        } else {                                                                  // If user doesn't exists
             string password, confirm;
             do {
-                password = gameplay.AskHiddenPassword("Choose a password : ");
-                confirm =  gameplay.AskHiddenPassword("Confirm password  : ");
+                password = AskHiddenPassword("Choose a password : ");
+                confirm =  AskHiddenPassword("Confirm password  : ");
 
                 if (password != confirm)
                     WriteColoredMessage("Passwords doesn't match, please try again.\n", ConsoleColor.Yellow);
@@ -82,47 +129,41 @@ public class MainProgram {                                                      
             string salt = CryptoUtils.GenerateSalt();
             string hashed = CryptoUtils.HashPassword(password, salt);
 
-            gameplay.player = new Player(gameplay.player_name, hashed, salt);
+            user = new User(user_name, hashed, salt);
+            gameplay.player = new Player(user_name, user.id);
             SaveLocal();
             gameplay.player.Present();
         }
-        Console.ReadKey();
     }
 
-    private void ConnectProfile(Player existing) {
-        Console.WriteLine($"\nA profile with username '{gameplay.player_name}' already exists.");
-        Console.Write("Do you want to connect to this profile ? (O/N) : ");
+    private void ConnectProfile(User existing) {                                // Load user and player online data
+        string password = AskHiddenPassword();
+        string hashedInput = CryptoUtils.HashPassword(password, existing.Salt);
 
-        if (Console.ReadKey().Key == ConsoleKey.O) {
-            string password = gameplay.AskHiddenPassword();
-            string hashedInput = CryptoUtils.HashPassword(password, existing.Salt);
-
-            if (hashedInput == existing.PasswordHash) {
-                gameplay.player = existing;
-                WriteColoredMessage("\nConnection successful !", ConsoleColor.Green);
-                gameplay.player.Present();
-            } else {
-                WriteColoredMessage("\nIncorrect password !");
-                gameplay.player = new();
-            }
-        } else Console.WriteLine("\nPlease choose another username.");
+        if (hashedInput == existing.PasswordHash) {
+            gameplay.player = server.GetPlayerByName(existing.Username);
+            if (gameplay.player == null) return;                            // Shouldn't happened
+            WriteColoredMessage("\nConnection successful !", ConsoleColor.Green);
+            gameplay.player.Present();
+        } else {
+            WriteColoredMessage("\nIncorrect password !");
+            user = null;
+            gameplay.player = null;
+        }
     }
 
     private void Load() {
-        gameplay.AskName();
+        AskUsername();
         Player? local = LoadLocal();
-        string name = (local == null) ? gameplay.player_name : local.name;
-
-        string password = gameplay.AskHiddenPassword();
-        gameplay.player = server.LoadPlayer(name, password);
-        if (gameplay.player != null) gameplay.player.Present();
-        Console.ReadKey();
+        string name = (local == null) ? user_name : local.Name;                 // User and player should have same name
+        User? existing = server.GetUserByUsername(name);
+        if (existing != null) ConnectProfile(existing);
     }
 
     private Player? LoadLocal() {                                               // Load player json file data
-        if (gameplay.player == null) return null;
+        if (user_name == null) return null;
 
-        string chemin = Path.Combine(save_path, $"{gameplay.player.name}.json");
+        string chemin = Path.Combine(save_path, $"{user_name}.json");
         if (!File.Exists(chemin)) return null;                                  // If local save doesn't exists
 
         try {
@@ -139,7 +180,6 @@ public class MainProgram {                                                      
             WriteColoredMessage("You're not connected !", ConsoleColor.Yellow);
             Console.WriteLine("Please connect with 'Create an account' [1] " +
                 "or 'Load an account' [2] to play.");
-            Console.ReadKey();
             return;
         }
 
@@ -160,7 +200,7 @@ public class MainProgram {                                                      
 
         int rank = 1;
         foreach (Player p in topPlayers) {
-            Console.WriteLine($"{rank,2}. {p.name,-15} | Score : {p.score,5} | Level : {p.level}");
+            Console.WriteLine($"{rank,2}. {p.Name,-15} | Score : {p.Score,5} | Level : {p.Level}");
             rank++;
         }
 
@@ -172,44 +212,42 @@ public class MainProgram {                                                      
                 "\nRemember to save [6] to synchronize your progress.", ConsoleColor.Yellow);
             else WriteColoredMessage("Profile is updated", ConsoleColor.Green);
         }
-
-        Console.ReadKey();
     }
 
     public void Save() {
         if (gameplay.player == null) return;
 
-        SaveLocal();
-        SaveOnline();
-        Console.ReadKey();
+        SaveLocal();                                                            // Only save player's data
+        SaveAllOnline();
     }
 
     private void SaveLocal() {                                                  // Create or update json file (player data)
         if (gameplay.player == null) return;
 
         Directory.CreateDirectory(save_path);                                   // Create directory if doesn't exists
-        string chemin = Path.Combine(save_path, $"{gameplay.player.name}.json");
+        string chemin = Path.Combine(save_path, $"{user_name}.json");
         string json = JsonSerializer.Serialize(gameplay.player, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(chemin, json);
-        WriteColoredMessage("Profile saved !", ConsoleColor.Green);
+        WriteColoredMessage("Profile saved !", ConsoleColor.Green);             // Locally
     }
 
-    private bool SaveOnline() {                                                 // Send json file to database
-        if (gameplay.player == null) return false;
+    private void SaveAllOnline() {                                              // Send json file to database
+        if (user != null) server.SaveUser(user);
 
         Player? local = LoadLocal();
-        if (local == null) {
+        if (local == null)
             WriteColoredMessage("No local save for now", ConsoleColor.Yellow);
-            return false;
+        else {
+            try {
+                server.SavePlayer(local);
+            } catch (Exception e) {
+                WriteColoredMessage($"Error while saving : {e.Message}");
+            }
         }
 
-        try {
-            server.SavePlayer(local);
-            return true;
-        } catch (Exception e) {
-            WriteColoredMessage($"Error while saving : {e.Message}");
-            return false;
-        }
+        // !! Add createSave() function in MainProgram
+
+        if (gameplay.enemy != null) server.SaveEnemy(gameplay.enemy);
     }
 
     public static void WriteColoredMessage(string message, ConsoleColor color = ConsoleColor.Red) {

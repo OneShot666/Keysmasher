@@ -3,9 +3,7 @@ public class Gameplay {                                                         
     public bool running = false;
     public Player? player;
     public string player_name = "";
-    private readonly int min_username = 3;
-    private readonly int max_username = 15;
-    private readonly int min_password = 6;                                      // No max lenght for password for now
+    public Enemy? enemy;
 
     public void StartGame(MainProgram program) {
         if (player == null) return;
@@ -45,52 +43,14 @@ public class Gameplay {                                                         
         return choice;
     }
 
-    public void AskName() {
-        do {
-            Console.Write("\nUsername : ");
-            player_name = Console.ReadLine()?.Trim() ?? "";
-            if (player_name.Length < min_username || player_name.Length > max_username)
-                MainProgram.WriteColoredMessage("Username must contain between 3 and 15 characters!",
-                    ConsoleColor.Yellow);
-        } while (player_name.Length < min_username || player_name.Length > max_username);
-    }
-
-    public string AskHiddenPassword(string prompt = "\nPassword : ") {
-        string password = "";
-        do {
-            Console.Write(prompt);
-            ConsoleKeyInfo key;
-
-            while (true) {
-                key = Console.ReadKey(intercept: true);
-
-                if (key.Key == ConsoleKey.Enter) {                              // Confirm password
-                    if (password.Length < min_password)
-                        MainProgram.WriteColoredMessage("\nPassword is too short !", ConsoleColor.Yellow);
-                    break;
-                } else if (key.Key == ConsoleKey.Backspace) {                   // Remove last char
-                    if (password.Length > 0) {
-                        password = password[..^1];
-                        Console.Write("\b \b");
-                    }
-                } else {                                                        // Display hidden char
-                    password += key.KeyChar;
-                    Console.Write("*");
-                }
-            }
-        } while(password.Length < min_password);
-
-        return password;
-    }
-
     public void StartCombat() {
         if (player == null) return;
-        var enemy = Enemy.GenerateByLevel(player.level);
-        Console.WriteLine($"\nA '{enemy.name}' appears ! (HP {enemy.hp})");
+        enemy = Enemy.GenerateByLevel(player.Level);
+        Console.WriteLine($"\nA '{enemy.Name}' appears ! (HP {enemy.Hp})");
 
         var rnd = new Random();
-        while (enemy.hp > 0 && player.hp > 0) {
-            Console.WriteLine($"\n{player.name} HP: {player.hp}/{player.maxHp} | {enemy.name} HP: {enemy.hp}");
+        while (enemy.Hp > 0 && player.Hp > 0) {
+            Console.WriteLine($"\n{player.Name} HP: {player.Hp}/{player.MaxHp} | {enemy.Name} HP: {enemy.Hp}");
             Console.WriteLine("1 Attack  2 Defend  3 Heal  4 Flee");
             int action = AskIntChoice("Action : ");
 
@@ -117,8 +77,8 @@ public class Gameplay {                                                         
                     break;
             }
 
-            if (enemy.hp <= 0) {                                                // Check enemy still alive
-                Console.WriteLine($"You defeated '{enemy.name}' !");
+            if (enemy.Hp <= 0) {                                                // Check enemy still alive
+                Console.WriteLine($"You defeated '{enemy.Name}' !");
                 SpawnLoot();
                 player.LootEnemy(enemy);
                 return;
@@ -126,7 +86,7 @@ public class Gameplay {                                                         
 
             // Enemy turn
             int enemyDmg = enemy.GetRandomDamage(3);
-            Console.WriteLine($"{enemy.name} attack and inflict {enemyDmg} damage.");
+            Console.WriteLine($"{enemy.Name} attack and inflict {enemyDmg} damage.");
             player.TakeDamage(enemyDmg);
         }
     }
