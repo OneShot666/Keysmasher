@@ -1,5 +1,9 @@
 ﻿using System.Text.Json;
 
+// ... Check warning message when player username doesn't exists
+// ... Check warning message if player try to load but is already connected
+// ... Save player data online before creating/loading a new user -> check load with local saves works
+// ... Add inventory capacity -> add fonction to check if full and display current number of item
 // . Everything seems to work, check small tasks in other programs before continue
 // ! Maybe a clone pb when saving in db -> use id instead ?
 // ! Add API and backend server online -> use Render
@@ -49,7 +53,7 @@ public class MainProgram {                                                      
                     case 2: LoadUser(); break;
                     case 3: Quit(); return;
                     default:
-                        WriteColoredMessage("Incorrect choice !");
+                        WriteColoredMessage("\nIncorrect choice !");
                         break;
                 }
             } else {                                                            // If connected
@@ -62,7 +66,7 @@ public class MainProgram {                                                      
                     case 6: Save(); break;
                     case 7: Quit(); return;
                     default:
-                        WriteColoredMessage("Incorrect choice !");
+                        WriteColoredMessage("\nIncorrect choice !");
                         break;
                 }
             }
@@ -121,8 +125,8 @@ public class MainProgram {                                                      
         } else {                                                                  // If user doesn't exists
             string password, confirm;
             do {
-                password = AskHiddenPassword("Choose a password : ");
-                confirm =  AskHiddenPassword("Confirm password  : ");
+                password = AskHiddenPassword("\nChoose a password : ");
+                confirm =  AskHiddenPassword("\nConfirm password  : ");
 
                 if (password != confirm)
                     WriteColoredMessage("Passwords doesn't match, please try again.\n", ConsoleColor.Yellow);
@@ -132,7 +136,7 @@ public class MainProgram {                                                      
             string hashed = CryptoUtils.HashPassword(password, salt);
 
             user = new User(user_name, hashed, salt);
-            gameplay.player = new Player(user_name, user.id);
+            gameplay.player = new Player(user_name, user.id);                   // Create new player
             SaveLocal();
             gameplay.player.Present();
         }
@@ -160,7 +164,15 @@ public class MainProgram {                                                      
         Player? local = LoadLocal();
         string name = (local == null) ? user_name : local.Name;                 // User and player should have same name
         User? existing = server.GetUserByUsername(name);
-        if (existing != null) ConnectProfile(existing);
+        if (existing != null) {
+            if (existing == user)                                               // If already connected
+                WriteColoredMessage($"\nYou're already connected as '{user_name}'!", ConsoleColor.Yellow);
+            else if (gameplay.player == null && local != null) {                // If no online save, load local save
+                gameplay.player = local;
+                WriteColoredMessage("\nNo online save found, loaded local save.", ConsoleColor.Yellow);
+                gameplay.player.Present();
+            } else ConnectProfile(existing);
+        } else WriteColoredMessage($"\nNo profile with username '{name}' found.", ConsoleColor.Yellow);
     }
 
     private Player? LoadLocal() {                                               // Load player json file data
@@ -174,14 +186,14 @@ public class MainProgram {                                                      
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true }; // Ignore case sensitivity
             return JsonSerializer.Deserialize<Player>(contenu, options);        // Return player instance
         } catch (Exception e) {
-            WriteColoredMessage($"Error while reading local save : {e.Message}");
+            WriteColoredMessage($"\nError while reading local save : {e.Message}");
             return null;
         }
     }
 
     private void Play() {
         if (gameplay.player == null) {
-            WriteColoredMessage("You're not connected !", ConsoleColor.Yellow);
+            WriteColoredMessage("\nYou're not connected !", ConsoleColor.Yellow);
             Console.WriteLine("Please connect with 'Create an account' [1] " +
                 "or 'Load an account' [2] to play.");
             return;
@@ -197,7 +209,7 @@ public class MainProgram {                                                      
         if (topPlayers == null) return;                                         // ! Add error message
 
         if (topPlayers.Count == 0) {
-            WriteColoredMessage("No player found for leaderboard.", ConsoleColor.Yellow);
+            WriteColoredMessage("\nNo player found for leaderboard.", ConsoleColor.Yellow);
             Console.WriteLine("Save your progress and become Top 1 !");
             return;
         }
@@ -209,7 +221,6 @@ public class MainProgram {                                                      
         }
 
         Console.WriteLine("\n" + new string('=', 25));
-
         if (gameplay.player != null) {
             bool synced = server.IsPlayerSynced(gameplay.player);               // Check if player is up-to-date
             if (!synced) WriteColoredMessage("Your online data is out of date!" +
@@ -231,7 +242,7 @@ public class MainProgram {                                                      
         string path = Path.Combine(save_path, $"{user_name}.json");
         string json = JsonSerializer.Serialize(gameplay.player, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(path, json);
-        WriteColoredMessage("Profile saved !", ConsoleColor.Green);             // Locally
+        WriteColoredMessage("\nProfile saved !", ConsoleColor.Green);             // Locally
     }
 
     private void SaveAllOnline() {                                              // Send json file to database
@@ -239,12 +250,12 @@ public class MainProgram {                                                      
 
         Player? local = LoadLocal();
         if (local == null)
-            WriteColoredMessage("No local save for now", ConsoleColor.Yellow);
+            WriteColoredMessage("\nNo local save for now", ConsoleColor.Yellow);
         else {
             try {
                 server.SavePlayer(local);
             } catch (Exception e) {
-                WriteColoredMessage($"Error while saving : {e.Message}");
+                WriteColoredMessage($"\nError while saving : {e.Message}");
             }
         }
 

@@ -15,7 +15,8 @@ public class Enemy : Entity {
         var rnd = new Random();
         int lvl = Math.Max(1, playerLevel + rnd.Next(-1, 2));                   // A gap away from player's level
         return new Enemy { Name = lvl <= 1 ? "Goblin" : (lvl == 2 ? "Bandit" : "Orc"),
-            Level = lvl, Hp = 20 + lvl * 15, Attack = 6 + lvl * 3, Defense = 1 + lvl,
+            Level = lvl, Hp = 20 + lvl * 15, MaxHp = 20 + lvl * 15,
+            Attack = 6 + lvl * 3, Defense = 1 + lvl,
             rewardGold = lvl * 5, rewardXp = lvl * 20 };
     }
 }

@@ -57,6 +57,7 @@ public class Gameplay {                                                         
                 $" | {enemy.Name} HP: {enemy.Hp}/{enemy.MaxHp}");
             Console.WriteLine("1 Attack  2 Defend  3 Heal  4 Flee");
             int action = AskIntChoice("Action : ");
+            Console.WriteLine();
 
             switch (action) {
                 case 1:
@@ -78,7 +79,7 @@ public class Gameplay {                                                         
                     break;
                 default:
                     Console.WriteLine("Action not recognized.");
-                    break;
+                    continue;
             }
 
             if (enemy.Hp <= 0) {                                                // Check enemy still alive
