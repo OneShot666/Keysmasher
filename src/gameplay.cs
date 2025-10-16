@@ -101,8 +101,7 @@ public class Gameplay {                                                         
         var rnd = new Random();
         if (rnd.NextDouble() < 0.4) {                                           // 40% chance to drop a potion
             Console.WriteLine("You find a 'Potion' on the enemy !");
-            player.Inventory.Add("Potion");
-            player.hasPotion = true;
+            player.CollectItem("Potion");
         }
     }
 }

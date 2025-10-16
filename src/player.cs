@@ -1,8 +1,7 @@
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
 
-// L Add CollectItem(string name) & UseItem(string name) functions
-// L Player can only use defensive posture if has a shield
+// L Add weapon attack to basic attack of player (ex: 5 + 7)
 namespace Gameplay;
 public class Player : Entity {
     [BsonRepresentation(BsonType.ObjectId)]
@@ -15,6 +14,7 @@ public class Player : Entity {
     public int MaxXp { get; set; } = 100;                                       // To level up
     public int Gold { get; set; } = 0;
     public List<string> Inventory { get; set; } = new List<string>();
+    public int inv_capacity { get; set; } = 5;                                  // Max items in inventory
 
     public override string ToString() {
         return $"Player(Name='{Name}', Level={Level}, HP={Hp}, Max HP={MaxHp}, " +
@@ -24,6 +24,7 @@ public class Player : Entity {
     public Player() {                                                           // Use for local saves
         Attack = 12;
         Defense = 5;
+        Inventory.Add("Sword");
         Inventory.Add("Shield");
         Inventory.Add("Potion");
     }
@@ -33,6 +34,7 @@ public class Player : Entity {
         UserId = user_id;
         Attack = 12;                                                            // New default value
         Defense = 5;
+        Inventory.Add("Sword");
         Inventory.Add("Shield");
         Inventory.Add("Potion");                                                // Player start with a potion
     }
@@ -47,7 +49,7 @@ public class Player : Entity {
         Console.WriteLine($"Defense   : {Defense}");
         Console.WriteLine($"Coins     : x{Gold}");
         string content = (Inventory.Count > 0) ? string.Join(", ", Inventory) : "Vide";
-        Console.WriteLine($"Inventory : {content}");
+        Console.WriteLine($"Inventory : ({Inventory.Count}/{inv_capacity}) {content}");
     }
 
     public void GainXp(int amount) {
@@ -65,6 +67,7 @@ public class Player : Entity {
         Hp = MaxHp;                                                             // Regen player
         Attack += 2;
         Defense += 1;
+        inv_capacity += 1;
         Console.WriteLine($"Level up ! You're now level : {Level}. HP restored.");
     }
 
@@ -73,8 +76,10 @@ public class Player : Entity {
     }
 
     public void UseDefensivePosition() {
-        is_defending = true;
-        Console.WriteLine("You took a defensive posture : defense doubled !");
+        if (Inventory.Contains("Shield")) {
+            is_defending = true;
+            Console.WriteLine("You took a defensive posture : defense doubled !");
+        } else Console.WriteLine("You don't have any shield !");
     }
 
     public override void TakeDamage(int brut_damage) {
@@ -91,11 +96,10 @@ public class Player : Entity {
     public void UsePotion() {
         if (Hp >= MaxHp) Console.WriteLine("You're already full life !");       // Don't consume if full life
         else if (hasPotion) {
-            Inventory.Remove("Potion");
+            UseItem("Potion");
             Hp = Math.Min(MaxHp, Hp + healAmount);
             Console.WriteLine($"You use a potion and heal {healAmount} HP. HP: {Hp}/{MaxHp}");
         } else Console.WriteLine("No heal potion available.");
-        hasPotion = Inventory.Contains("Potion");
     }
 
     public void ShowInventory() {
@@ -114,6 +118,17 @@ public class Player : Entity {
         foreach (var kv in counts) {
             Console.WriteLine($"{kv.Key} x{kv.Value}");
         }
+    }
+
+    public void UseItem(string item) {
+        if (Inventory.Contains(item)) Inventory.Remove(item);
+        hasPotion = Inventory.Contains("Potion");
+    }
+
+    public void CollectItem(string item) {
+        if (Inventory.Count >= inv_capacity) Console.WriteLine("Inventory is full !");
+        else Inventory.Add(item);
+        hasPotion = Inventory.Contains("Potion");
     }
 
     public void LootEnemy(Enemy enemy) {
