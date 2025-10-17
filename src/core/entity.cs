@@ -10,7 +10,7 @@ public abstract class Entity {
     public int Hp { get; set; } = 100;
     public int MaxHp { get; set; } = 100;
     public int Attack { get; set; } = 5;
-    public int Defense { get; set; } = 1;
+    public int Defense { get; set; } = 2;
 
     public override string ToString() {                                         // When display instances
         return $"Entity(Name='{Name}', Level={Level}, HP={Hp}, Max HP={MaxHp}, " +

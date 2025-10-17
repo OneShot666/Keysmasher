@@ -1,6 +1,7 @@
 ﻿using MongoDB.Bson;
 using Core;
 
+// ? Make StartCombat a [Services] class ?
 namespace Gameplay;
 public class Gameplay {                                                         // Manage player
     public bool running = false;

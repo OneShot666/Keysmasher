@@ -1,3 +1,4 @@
+// ! Add loot dict of {item, chance} -> Everything the enemy can drop (depends on player's chance)
 // ! Add different enemy types with varying stats and rewards (herited from this class)
 namespace Core;
 public class Enemy : Entity {

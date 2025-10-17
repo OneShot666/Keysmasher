@@ -1,7 +1,9 @@
 ﻿// ===== TO DO LIST =====
 // ... Check encrypt and decrypt functions
+// . Doing tasks in player.cs (items update)
+// ! Add 'Items' table in database + functions
+// ! Add rarity for items -> appears based on player's luck + auto-generated attributes
 // ! Save fight if player quit during combat -> add option to quit and resume fight
-// ! Do tasks in player.cs
 // L Upgrade API -> in KeySmasherAPI
 // L Upgrade local website -> in KeySmasherWeb
 // ? Add API and backend online server -> make Render work

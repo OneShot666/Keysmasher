@@ -1,23 +1,29 @@
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
+using Assets;
 
-// ! Add item class and weapon|shield|potion class that herits from item class (has type attribute)
+// ! Create specific items
+// ! Add slot system for equipping items (weapon, shield, amulet)
 // ! Add weapon attack to basic attack of player (ex: 5 + 7)
 // ! Add shield defense to basic defense of player (ex: 2 + 3)
 // ! Add amulet to increase player's luck (chance of potion for now)
-// ! Add slot system for equipping items (weapon, shield, amulet)
+// ? Add energy/energyMax for player
 namespace Core;
 public class Player : Entity {
     [BsonRepresentation(BsonType.ObjectId)]
     public ObjectId UserId { get; set; }                                        // foreign key to user
     private bool is_defending = false;
-    public bool hasPotion = true;
+    public bool hasPotion = true;                                               // Player start with a potion (normally)
     private const int healAmount = 50;
     public int Score { get; set; } = 0;                                         // Based on xp
     public int Xp { get; set; } = 0;
     public int MaxXp { get; set; } = 100;                                       // To level up
     public int Gold { get; set; } = 0;
+    public int Luck { get; set; } = 0;                                          // +X% chance (max: 100)
     public List<string> Inventory { get; set; } = new List<string>();
+    public Dictionary<EquipementType, Item?> EquippedItems { get; set; } = new() {
+        {EquipementType.Weapon, null}, {EquipementType.Shield, null},
+        {EquipementType.Amulet, null} };
     public int inv_capacity { get; set; } = 6;                                  // Max items in inventory
 
     public override string ToString() {
@@ -26,21 +32,19 @@ public class Player : Entity {
     }
 
     public Player() {                                                           // Use for local saves
-        Attack = 12;
-        Defense = 5;
-        Inventory.Add("Sword");
-        Inventory.Add("Shield");
-        Inventory.Add("Potion");
+        Inventory.Clear();
+        CollectItem("Sword");
+        CollectItem("Shield");
+        CollectItem("Potion");
     }
 
     public Player(string name, ObjectId user_id) {
         Name = name;
         UserId = user_id;
-        Attack = 12;                                                            // New default value
-        Defense = 5;
-        Inventory.Add("Sword");
-        Inventory.Add("Shield");
-        Inventory.Add("Potion");                                                // Player start with a potion
+        Inventory.Clear();
+        CollectItem("Sword");                                                   // Basic equipement
+        CollectItem("Shield");
+        CollectItem("Potion");
     }
 
     public override void Present() {
@@ -124,15 +128,34 @@ public class Player : Entity {
         }
     }
 
+    public void CollectItem(string item) {
+        if (Inventory.Count >= inv_capacity) Console.WriteLine("Inventory is full !");
+        else {
+            Inventory.Add(item);
+            hasPotion = Inventory.Contains("Potion");
+        }
+    }
+
     public void UseItem(string item) {
         if (Inventory.Contains(item)) Inventory.Remove(item);
         hasPotion = Inventory.Contains("Potion");
     }
 
-    public void CollectItem(string item) {
-        if (Inventory.Count >= inv_capacity) Console.WriteLine("Inventory is full !");
-        else Inventory.Add(item);
-        hasPotion = Inventory.Contains("Potion");
+    public void Equip(Item item) {
+        if (item.SlotType == null) {
+            Console.WriteLine($"{item.Name} cannot be equipped.");
+            return;
+        }
+
+        EquippedItems[item.SlotType.Value] = item;
+        Console.WriteLine($"{item.Name} equipped on {item.SlotType.Value}.");
+    }
+
+    public void Unequip(EquipementType slot) {
+        if (EquippedItems[slot] != null) {
+            Console.WriteLine($"{EquippedItems[slot]!.Name} unequipped from {slot}.");
+            EquippedItems[slot] = null;
+        }
     }
 
     public void LootEnemy(Enemy enemy) {

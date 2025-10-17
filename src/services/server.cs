@@ -8,7 +8,7 @@ namespace Services;
 public class ServerService {
     public bool is_connected = false;                                           // If connected to database
     private string db_name = "KeySmasher";
-    // private string db_name = "FakeDatabase";                                 // ! To test offline mode
+    // private string db_name = "FakeDatabase";                                 // To test offline mode
     private readonly string save_folder = "Saves";
     private readonly IMongoDatabase? _database;
     private IMongoCollection<User>? _users { get; }
@@ -19,7 +19,7 @@ public class ServerService {
     private readonly ReplaceOptions options = new ReplaceOptions { IsUpsert = true };   // Insert if doesn't exists
 
     public ServerService() {                                                    // Try to connect at launch
-        Directory.CreateDirectory(save_folder);                            // Create directory if doesn't exists
+        Directory.CreateDirectory(save_folder);                                 // Create directory if doesn't exists
 
         Console.WriteLine("Connecting to database...");
         var collections = new List<string>();
