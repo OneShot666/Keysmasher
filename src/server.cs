@@ -15,6 +15,7 @@ public class ServerService {
     private readonly ReplaceOptions options = new ReplaceOptions { IsUpsert = true };   // Insert if doesn't exists
 
     public ServerService() {
+        Console.WriteLine("Connecting to database...");
         var collections = new List<string>();
         try {
             var client = new MongoClient("mongodb://localhost:27017");

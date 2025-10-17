@@ -13,6 +13,8 @@ public class Save {
     public ObjectId? EnemyId { get; set; }                                      // Optional (if fighting)
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;                  // Time of save
 
+    public Save() { }                                                           // For local saves
+
     public Save(ObjectId playerId) {
         PlayerId = playerId;
     }

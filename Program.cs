@@ -29,7 +29,7 @@ public class MainProgram {                                                      
         Directory.CreateDirectory(save_path);                                   // Create directory if doesn't exists
 
         while (true) {
-            // Console.Clear();                                                    // Messages from server won't be visible
+            Console.Clear();                                                    // Messages from server won't be visible
             Console.WriteLine("===== MENU =====");
             if (user == null) {
                 Console.WriteLine("1 - Create an account");
@@ -164,17 +164,22 @@ public class MainProgram {                                                      
         var (local_user, player, save, enemy) = LoadLocal();
         string name = (local_user == null) ? user_name : local_user.Username;   // User and player should have same name
         User? existing = server.GetUserByUsername(name);
-        if (local_user != null && local_user.Username == user_name)             // If already connected
+        if (local_user != null && user != null && local_user.Username == user_name) // If already connected
             WriteColoredMessage($"You're already connected as '{user_name}'!", ConsoleColor.Yellow);
         else if (existing != null) ConnectProfile(existing);
-        else if (player != null) {                                              // If no online save, load local save
-            Save();                                                             // Save current user before
-            // user = new User(user_name);                                      // !! Upgrade later
-            gameplay.player = player;
-            gameplay.save = save;
-            gameplay.enemy = enemy;
-            WriteColoredMessage("No online save found, loaded local save.", ConsoleColor.Yellow);
-            gameplay.player.Present();
+        else if (local_user != null && player != null) {                        // If no online save, load local save
+            string password = AskHiddenPassword();
+            string hashedInput = CryptoUtils.HashPassword(password, local_user.Salt);
+
+            if (hashedInput == local_user.PasswordHash) {
+                if (user != null) Save();                                       // Save previous user if exists
+                user = local_user;
+                gameplay.player = player;
+                gameplay.save = save;
+                gameplay.enemy = enemy;
+                WriteColoredMessage("\nNo online save found, loaded local save.", ConsoleColor.Yellow);
+                gameplay.player.Present();
+            } else WriteColoredMessage("\nIncorrect password !");
         } else WriteColoredMessage($"No profile with username '{name}' found.", ConsoleColor.Yellow);
     }
 

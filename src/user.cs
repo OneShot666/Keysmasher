@@ -9,6 +9,12 @@ public class User {
     public string PasswordHash { get; set; }
     public string Salt { get; set; }
 
+    public User() {                                                             // For local saves
+        Username = "";
+        PasswordHash = "";
+        Salt = "";
+    }
+
     public User(string name, string password, string salt) {
         Username = name;
         PasswordHash = password;
