@@ -3,6 +3,7 @@ using MongoDB.Bson;
 
 namespace Gameplay;
 public class ServerService {
+    private bool is_connected = false;
     private string db_name = "KeySmasher";
     private readonly IMongoDatabase? _database;
     private IMongoCollection<User>? _users { get; }
@@ -17,6 +18,7 @@ public class ServerService {
         var client = new MongoClient("mongodb://localhost:27017");
         try {
             _database = client.GetDatabase(db_name);
+            is_connected = true;
             MainProgram.WriteColoredMessage("Connection to database established !", success);
         } catch (Exception e) {
             throw new ArgumentException($"Error while connecting to database : {e.Message}");
@@ -36,32 +38,32 @@ public class ServerService {
 
     /* ----- USERS ----- */
     public User? GetUserById(ObjectId userId) {                                 // Load user (to find player's user)
-        return _users.Find(p => p.id == userId).FirstOrDefault();
+        return is_connected ? _users.Find(p => p.id == userId).FirstOrDefault() : null;
     }
 
     public User? GetUserByUsername(string username) {                           // Load user
-        return _users.Find(u => u.Username == username).FirstOrDefault();
+        return is_connected ? _users.Find(u => u.Username == username).FirstOrDefault() : null;
     }
 
     public void CreateUser(User user) {
-        if (_users == null) return;
+        if (is_connected || _users == null) return;
         _users.InsertOne(user);
         MainProgram.WriteColoredMessage("User created successfully !", success);
     }
 
     public void SaveUser(User user) {
-        if (_users == null) return;
+        if (is_connected || _users == null) return;
         var filter = Builders<User>.Filter.Eq(u => u.id, user.id);
         _users.ReplaceOne(filter, user, options);
     }
 
     /* ----- SAVES ----- */
     public Save? GetSaveByPlayerId(ObjectId playerId) {                         // Load save
-        return _saves.Find(s => s.PlayerId == playerId).FirstOrDefault();
+        return is_connected ? _saves.Find(s => s.PlayerId == playerId).FirstOrDefault() : null;
     }
 
     public void SaveGame(Save save) {
-        if (_saves == null) return;
+        if (is_connected || _saves == null) return;
         var filter = Builders<Save>.Filter.Eq(p => p.PlayerId, save.PlayerId);
         _saves.ReplaceOne(filter, save, options);
         MainProgram.WriteColoredMessage($"Save updated !", success);
@@ -69,24 +71,24 @@ public class ServerService {
 
     /* ----- PLAYERS ----- */
     public List<Player>? GetTopPlayers(int limit = 5) {                         // Get top 5 players by default
-        if (_players == null) return null;
+        if (is_connected || _players == null) return null;
         return _players.Find(FilterDefinition<Player>.Empty)
             .SortByDescending(p => p.Score).Limit(limit).ToList();
     }
 
     public bool IsPlayerSynced(Player localPlayer) {                            // Only compare important data
-        if (_players == null) return false;
+        if (is_connected || _players == null) return false;
         var dbPlayer = _players.Find(p => p.Name == localPlayer.Name).FirstOrDefault();
         if (dbPlayer == null) return false;
         return dbPlayer.Score == localPlayer.Score && dbPlayer.Level == localPlayer.Level;
     }
 
     public Player? GetPlayerByName(string name) {                               // Load player
-        return _players.Find(p => p.Name == name).FirstOrDefault();
+        return is_connected ? _players.Find(p => p.Name == name).FirstOrDefault() : null;
     }
 
     public void SavePlayer(Player player) {
-        if (_players == null) return;
+        if (is_connected || _players == null) return;
         var filter = Builders<Player>.Filter.Eq(p => p.UserId, player.UserId);
         _players.ReplaceOne(filter, player, options);
         MainProgram.WriteColoredMessage($"Profile '{player.Name}' updated !", success);
@@ -94,17 +96,17 @@ public class ServerService {
 
     /* ----- ENEMIES ----- */
     public Enemy? GetEnemyById(ObjectId enemyId) {                              // Load enemy
-        return _enemies.Find(e => e.id == enemyId).FirstOrDefault();
+        return is_connected ? _enemies.Find(e => e.id == enemyId).FirstOrDefault() : null;
     }
 
     public void SaveEnemy(Enemy enemy) {
-        if (_enemies == null) return;
+        if (is_connected || _enemies == null) return;
         var filter = Builders<Enemy>.Filter.Eq(p => p.id, enemy.id);
         _enemies.ReplaceOne(filter, enemy, options);
     }
 
     public void DeleteEnemy(ObjectId enemyId) {
-        if (_enemies == null) return;
+        if (is_connected || _enemies == null) return;
         var filter = Builders<Enemy>.Filter.Eq(e => e.id, enemyId);
         _enemies.DeleteOne(filter);
     }

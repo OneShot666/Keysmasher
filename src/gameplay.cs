@@ -1,4 +1,6 @@
-﻿namespace Gameplay;
+﻿using MongoDB.Bson;
+
+namespace Gameplay;
 public class Gameplay {                                                         // Manage player
     public bool running = false;
     public Save? save;                                                          // Use, load and save it (in MainProgram)
@@ -6,7 +8,7 @@ public class Gameplay {                                                         
     public string player_name = "";
     public Enemy? enemy;
 
-    public void StartGame(MainProgram program) {
+    public void StartGame(MainProgram program, Gameplay gameplay) {
         if (player == null) return;
 
         bool running = true;
@@ -21,7 +23,7 @@ public class Gameplay {                                                         
             int choice = AskIntChoice();
 
             switch (choice) {
-                case 1: StartCombat(); break;
+                case 1: StartCombat(gameplay.save); break;
                 case 2: player.UsePotion(); break;
                 case 3: player.ShowInventory(); break;
                 case 4: player.Present(); break;
@@ -45,9 +47,10 @@ public class Gameplay {                                                         
         return choice;
     }
 
-    public void StartCombat() {
+    public void StartCombat(Save? save) {
         if (player == null) return;
         enemy = Enemy.GenerateByLevel(player.Level);
+        if (save != null) save.EnemyId = enemy.id;                              // Add enemy id in save
         Console.WriteLine($"\nA '{enemy.Name}' appears ! (HP {enemy.Hp})");
 
         var rnd = new Random();
@@ -74,6 +77,7 @@ public class Gameplay {                                                         
                 case 4:
                     if (rnd.NextDouble() < 0.5) {                               // fifty-fifty chance to flee
                         Console.WriteLine("[Success] You escaped the combat !");
+                        if (save != null) save.EnemyId = ObjectId.Empty;        // Remove enemy id if fled
                         return;
                     } else Console.WriteLine("[Fail] The escape failed!");
                     break;
@@ -84,6 +88,7 @@ public class Gameplay {                                                         
 
             if (enemy.Hp <= 0) {                                                // Check enemy still alive
                 Console.WriteLine($"You defeated '{enemy.Name}' !");
+                if (save != null) save.EnemyId = ObjectId.Empty;                // Remove enemy id if defeated
                 SpawnLoot();
                 player.LootEnemy(enemy);
                 return;
@@ -93,6 +98,7 @@ public class Gameplay {                                                         
             int enemyDmg = enemy.GetRandomDamage(3);
             Console.WriteLine($"{enemy.Name} attack and inflict {enemyDmg} damage.");
             player.TakeDamage(enemyDmg);
+            if (player.Hp <= 0 && save != null) save.EnemyId = ObjectId.Empty;  // Remove enemy id if player died
         }
     }
 

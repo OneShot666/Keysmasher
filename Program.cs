@@ -1,11 +1,12 @@
 ﻿using System.Text.Json;
 
-// . Add save function for user/save/enemy -> Add it all in player save ?
-// ! Auto create save when creating/loading user & player -> should exists anyway
-// ! Add try catch for each use of server -> avoid error on offline mode
-// ! Maybe a clone pb when saving in db -> use id instead ?
-// ! Add API and backend server online -> use Render
+// ... Check save function for user/save/enemy works -> one json file for each
+// ... Check auto-create save works when creating/loading user & player
+// ... Check enemy id is add when player start a fight and is remove after (if flee, win or lose)
+// ... Check program work in offline mode
+// ? Save fight each round
 // L Transform project into .exe and/or a website
+// ? Add API and backend server online -> make Render work
 namespace Gameplay;                                                             // Avoid ambiguity with api
 public class MainProgram {                                                      // Manage server and saves
     private string game_name = "Key smasher";
@@ -134,8 +135,9 @@ public class MainProgram {                                                      
             string hashed = CryptoUtils.HashPassword(password, salt);
 
             Save();                                                             // Save current user before
-            user = new User(user_name, hashed, salt);
+            user = new User(user_name, hashed, salt);                           // Create new user
             gameplay.player = new Player(user_name, user.id);                   // Create new player
+            gameplay.save = new Save(gameplay.player.id);                       // Create new save
             SaveLocal();
             gameplay.player.Present();
         }
@@ -149,8 +151,9 @@ public class MainProgram {                                                      
             Save();                                                             // Save current user before
             user = existing;
             gameplay.player = server.GetPlayerByName(existing.Username);
-            WriteColoredMessage("\nConnection successful !", ConsoleColor.Green);
             if (gameplay.player == null) gameplay.player = new Player(user_name, user.id);  // Shouldn't happen
+            gameplay.save = server.GetSaveByPlayerId(gameplay.player.id);
+            WriteColoredMessage("\nConnection successful !", ConsoleColor.Green);
             gameplay.player.Present();
         } else WriteColoredMessage("\nIncorrect password !");
     }
@@ -220,7 +223,7 @@ public class MainProgram {                                                      
             return;
         }
 
-        gameplay.StartGame(this);
+        gameplay.StartGame(this, gameplay);
     }
 
     public void ShowLeaderboard(int limit = 5) {
