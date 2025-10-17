@@ -14,7 +14,7 @@ public class Player : Entity {
     public int MaxXp { get; set; } = 100;                                       // To level up
     public int Gold { get; set; } = 0;
     public List<string> Inventory { get; set; } = new List<string>();
-    public int inv_capacity { get; set; } = 5;                                  // Max items in inventory
+    public int inv_capacity { get; set; } = 6;                                  // Max items in inventory
 
     public override string ToString() {
         return $"Player(Name='{Name}', Level={Level}, HP={Hp}, Max HP={MaxHp}, " +

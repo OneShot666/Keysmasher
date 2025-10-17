@@ -102,12 +102,34 @@ public class Gameplay {                                                         
         }
     }
 
-    public void SpawnLoot() {
+    public void SpawnLoot()
+    {
         if (player == null) return;
         var rnd = new Random();
-        if (rnd.NextDouble() < 0.4) {                                           // 40% chance to drop a potion
+
+        // ---- Drop potion ----
+        double potionBaseDrop = 0.4;          // 40 % chance to drop a potion
+        double potionAmuletBonus = 0.2;       // +20 % if amulet (→ 60 %)
+        double potionChance = potionBaseDrop;
+
+        if (player.Inventory.Contains("Amulet"))
+            potionChance += potionAmuletBonus;
+
+        if (rnd.NextDouble() < potionChance)
+        {
             Console.WriteLine("You find a 'Potion' on the enemy !");
             player.CollectItem("Potion");
+            if (player.Inventory.Contains("Amulet"))
+                Console.WriteLine("Your amulet helped you find this potion!");
+        }
+
+        // ---- Drop amulet ----
+        // Amulet is rarest : 20 % chance to drop, and only one time
+        if (!player.Inventory.Contains("Amulet") && rnd.NextDouble() < 0.2)
+        {
+            Console.WriteLine("You found a mysterious 'Amulet' !");
+            player.CollectItem("Amulet");
         }
     }
+
 }
