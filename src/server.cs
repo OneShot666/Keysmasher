@@ -13,18 +13,23 @@ public class ServerService {
     private ConsoleColor success = ConsoleColor.Green;                          // For success messages
     private readonly ReplaceOptions options = new ReplaceOptions { IsUpsert = true };   // Insert if doesn't exists
 
-    // ? Will be updated when servers are fully online (allow offline mode)
     public ServerService() {
         var client = new MongoClient("mongodb://localhost:27017");
+        var collections = new List<string>();
         try {
             _database = client.GetDatabase(db_name);
-            is_connected = true;
-            MainProgram.WriteColoredMessage("Connection to database established !", success);
+            try {
+                collections = _database.ListCollectionNames().ToList();         // Try access collections
+                is_connected = true;
+                MainProgram.WriteColoredMessage("Connection to database established !", success);
+            } catch {
+                MainProgram.WriteColoredMessage("Connection to database failed !");
+            }
         } catch (Exception e) {
-            throw new ArgumentException($"Error while connecting to database : {e.Message}");
+            MainProgram.WriteColoredMessage($"Error while connecting to database : {e.Message}");
         }
 
-        var collections = _database.ListCollectionNames().ToList();             // Create tables if doesn't exists
+        if (!is_connected || _database == null) return;                         // Offline mode (don't load db)
         if (!collections.Contains("Users")) _database.CreateCollection("Users");
         if (!collections.Contains("Saves")) _database.CreateCollection("Saves");
         if (!collections.Contains("Players")) _database.CreateCollection("Players");

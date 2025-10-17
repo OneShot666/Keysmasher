@@ -1,9 +1,10 @@
 ﻿using System.Text.Json;
 
+// ... Check offline mode in server connection
+// ... Check program work in offline mode
 // ... Check save function for user/save/enemy works -> one json file for each
 // ... Check auto-create save works when creating/loading user & player
 // ... Check enemy id is add when player start a fight and is remove after (if flee, win or lose)
-// ... Check program work in offline mode
 // ? Save fight each round
 // L Transform project into .exe and/or a website
 // ? Add API and backend server online -> make Render work
