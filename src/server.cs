@@ -4,7 +4,8 @@ using MongoDB.Bson;
 namespace Gameplay;
 public class ServerService {
     private bool is_connected = false;
-    private string db_name = "KeySmasher";
+    // private string db_name = "KeySmasher";
+    private string db_name = "FakeDatabase";
     private readonly IMongoDatabase? _database;
     private IMongoCollection<User>? _users { get; }
     private IMongoCollection<Save>? _saves { get; }
@@ -14,19 +15,19 @@ public class ServerService {
     private readonly ReplaceOptions options = new ReplaceOptions { IsUpsert = true };   // Insert if doesn't exists
 
     public ServerService() {
-        var client = new MongoClient("mongodb://localhost:27017");
         var collections = new List<string>();
         try {
-            _database = client.GetDatabase(db_name);
-            try {
-                collections = _database.ListCollectionNames().ToList();         // Try access collections
-                is_connected = true;
-                MainProgram.WriteColoredMessage("Connection to database established !", success);
-            } catch {
+            var client = new MongoClient("mongodb://localhost:27017");
+            if (!DatabaseExists(client, db_name)) {                             // Try access collections
                 MainProgram.WriteColoredMessage("Connection to database failed !");
+                return;
             }
+            _database = client.GetDatabase(db_name);
+            collections = _database.ListCollectionNames().ToList();
+            is_connected = true;
+            MainProgram.WriteColoredMessage("Connection to database established !", success);
         } catch (Exception e) {
-            MainProgram.WriteColoredMessage($"Error while connecting to database : {e.Message}");
+            MainProgram.WriteColoredMessage($"Error while connecting to server : {e.Message}");
         }
 
         if (!is_connected || _database == null) return;                         // Offline mode (don't load db)
@@ -39,6 +40,13 @@ public class ServerService {
         _saves = _database.GetCollection<Save>("Saves");
         _players = _database.GetCollection<Player>("Players");
         _enemies = _database.GetCollection<Enemy>("Enemies");
+    }
+
+    public static bool DatabaseExists(IMongoClient client, string dbName) {
+        try {
+            var databaseNames = client.ListDatabaseNames().ToList();
+            return databaseNames.Contains(dbName);
+        } catch { return false; }                                               // Unable to connect to server
     }
 
     /* ----- USERS ----- */

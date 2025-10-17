@@ -29,7 +29,7 @@ public class MainProgram {                                                      
         Directory.CreateDirectory(save_path);                                   // Create directory if doesn't exists
 
         while (true) {
-            Console.Clear();                                                    // Messages from server won't be visible
+            // Console.Clear();                                                    // Messages from server won't be visible
             Console.WriteLine("===== MENU =====");
             if (user == null) {
                 Console.WriteLine("1 - Create an account");
