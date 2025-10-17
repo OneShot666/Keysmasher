@@ -4,8 +4,8 @@ using MongoDB.Bson;
 namespace Gameplay;
 public class ServerService {
     private bool is_connected = false;
-    // private string db_name = "KeySmasher";
-    private string db_name = "FakeDatabase";
+    private string db_name = "KeySmasher";
+    // private string db_name = "FakeDatabase";
     private readonly IMongoDatabase? _database;
     private IMongoCollection<User>? _users { get; }
     private IMongoCollection<Save>? _saves { get; }

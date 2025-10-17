@@ -1,10 +1,5 @@
 ﻿using System.Text.Json;
 
-// ... Check offline mode in server connection
-// ... Check program work in offline mode
-// ... Check save function for user/save/enemy works -> one json file for each
-// ... Check auto-create save works when creating/loading user & player
-// ... Check enemy id is add when player start a fight and is remove after (if flee, win or lose)
 // ? Save fight each round
 // L Transform project into .exe and/or a website
 // ? Add API and backend server online -> make Render work
@@ -164,7 +159,7 @@ public class MainProgram {                                                      
         var (local_user, player, save, enemy) = LoadLocal();
         string name = (local_user == null) ? user_name : local_user.Username;   // User and player should have same name
         User? existing = server.GetUserByUsername(name);
-        if (local_user != null && user != null && local_user.Username == user_name) // If already connected
+        if (local_user != null && user != null && local_user.Username == user.Username) // If already connected
             WriteColoredMessage($"You're already connected as '{user_name}'!", ConsoleColor.Yellow);
         else if (existing != null) ConnectProfile(existing);
         else if (local_user != null && player != null) {                        // If no online save, load local save
