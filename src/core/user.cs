@@ -1,7 +1,7 @@
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
 
-namespace Gameplay;
+namespace Core;
 public class User {
     [BsonId]
     public ObjectId id { get; set; } = ObjectId.GenerateNewId();

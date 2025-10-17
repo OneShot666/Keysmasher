@@ -1,6 +1,7 @@
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
 
+namespace Core;
 public abstract class Entity {
     [BsonId]                                                                    // Mongo primary key type
     public ObjectId id { get; set; } = ObjectId.GenerateNewId();

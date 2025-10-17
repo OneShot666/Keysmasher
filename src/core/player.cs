@@ -1,8 +1,12 @@
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
 
-// L Add weapon attack to basic attack of player (ex: 5 + 7)
-namespace Gameplay;
+// ! Add item class and weapon|shield|potion class that herits from item class (has type attribute)
+// ! Add weapon attack to basic attack of player (ex: 5 + 7)
+// ! Add shield defense to basic defense of player (ex: 2 + 3)
+// ! Add amulet to increase player's luck (chance of potion for now)
+// ! Add slot system for equipping items (weapon, shield, amulet)
+namespace Core;
 public class Player : Entity {
     [BsonRepresentation(BsonType.ObjectId)]
     public ObjectId UserId { get; set; }                                        // foreign key to user

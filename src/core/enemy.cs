@@ -1,4 +1,5 @@
-namespace Gameplay;
+// ! Add different enemy types with varying stats and rewards (herited from this class)
+namespace Core;
 public class Enemy : Entity {
     public int rewardGold { get; set; } = 5;
     public int rewardXp { get; set; } = 20;

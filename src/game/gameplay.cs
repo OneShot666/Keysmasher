@@ -1,14 +1,15 @@
 ﻿using MongoDB.Bson;
+using Core;
 
 namespace Gameplay;
 public class Gameplay {                                                         // Manage player
     public bool running = false;
-    public Save? save;                                                          // Use, load and save it (in MainProgram)
+    public Save? save;
     public Player? player;
     public string player_name = "";
     public Enemy? enemy;
 
-    public void StartGame(MainProgram program, Gameplay gameplay) {
+    public void StartGame(Game program, Gameplay gameplay) {
         if (player == null) return;
 
         bool running = true;
@@ -30,7 +31,7 @@ public class Gameplay {                                                         
                 case 5: program.Save(); break;
                 case 6: running = false; break;
                 default:
-                    MainProgram.WriteColoredMessage("Incorrect choice !");
+                    Game.WriteColoredMessage("Incorrect choice !");
                     break;
             }
             Console.ReadKey();
