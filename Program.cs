@@ -25,7 +25,7 @@ public class MainProgram {                                                      
 
         while (true) {
             Console.Clear();                                                    // Messages from server won't be visible
-            Console.WriteLine("===== MENU =====");
+            Console.WriteLine("===== MENU " + (server.is_connected ? "" : " [OFFLINE]") + " =====");
             if (user == null) {
                 Console.WriteLine("1 - Create an account");
                 Console.WriteLine("2 - Load an account");
@@ -286,21 +286,22 @@ public class MainProgram {                                                      
             File.WriteAllText(path, json);
         }
 
-        WriteColoredMessage("\nLocal save complete !", ConsoleColor.Green);
+        WriteColoredMessage("Local save complete !", ConsoleColor.Green);
     }
 
     private void SaveOnline() {                                                 // Send json files in database
         var (local_user, player, save, enemy) = LoadLocal();
         if (local_user == null)
-            WriteColoredMessage("\nNo local save for now.", ConsoleColor.Yellow);
+            WriteColoredMessage("No local save for now.", ConsoleColor.Yellow);
         else {
             try {
                 server.SaveUser(local_user);
                 if (player != null) server.SavePlayer(player);
                 if (save != null) server.SaveGame(save);
                 if (enemy != null) server.SaveEnemy(enemy);
+                WriteColoredMessage("Online save complete !", ConsoleColor.Green);
             } catch (Exception e) {
-                WriteColoredMessage($"\nError while saving : {e.Message}");
+                WriteColoredMessage($"Error while saving : {e.Message}");
             }
         }
     }

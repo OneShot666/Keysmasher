@@ -103,7 +103,7 @@ public class Player : Entity {
     }
 
     public void ShowInventory() {
-        Console.WriteLine("\n===== INVENTORY =====");
+        Console.WriteLine($"\n===== INVENTORY ({Inventory.Count}/{inv_capacity}) =====");
         if (Inventory.Count == 0) {
             Console.WriteLine("You don't have any item yet");
             return;

@@ -3,7 +3,7 @@ using MongoDB.Bson;
 
 namespace Gameplay;
 public class ServerService {
-    private bool is_connected = false;
+    public bool is_connected = false;
     private string db_name = "KeySmasher";
     // private string db_name = "FakeDatabase";
     private readonly IMongoDatabase? _database;
