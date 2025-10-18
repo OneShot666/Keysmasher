@@ -1,7 +1,7 @@
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
 
-namespace Assets;
+namespace Items;
 public abstract class Item() {
     [BsonId]                                                                    // Mongo primary key type
     public ObjectId id { get; set; } = ObjectId.GenerateNewId();

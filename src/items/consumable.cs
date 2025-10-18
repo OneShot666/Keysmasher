@@ -1,6 +1,6 @@
 using Core;
 
-namespace Assets;
+namespace Items;
 public abstract class Consumable : Item {
     public Consumable(string name="Consumable") : base(name) {
         Description = "Something you can only use once. Make it count.";

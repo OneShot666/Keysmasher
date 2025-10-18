@@ -1,5 +1,5 @@
-// ! Add loot dict of {item, chance} -> Everything the enemy can drop (depends on player's chance)
-// ! Add different enemy types with varying stats and rewards (herited from this class)
+// ! Add loot dict of {item, chance to drop[0-100]} -> player's luck is add to chance
+// ! Add different enemy types with varying stats and rewards (herited from this abstract class)
 namespace Core;
 public class Enemy : Entity {
     public int rewardGold { get; set; } = 5;

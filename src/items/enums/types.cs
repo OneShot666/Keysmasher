@@ -1,7 +1,7 @@
-namespace Assets;
+namespace Items;
 public enum ItemType {
     Weapon,
     Armor,
-    Amulet,
+    Jewel,
     Consumable
 }

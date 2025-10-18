@@ -32,7 +32,7 @@ public class Gameplay {                                                         
                 case 5: program.Save(); break;
                 case 6: running = false; break;
                 default:
-                    Game.WriteColoredMessage("Incorrect choice !");
+                    Game.WriteColoredMessage("Incorrect choice !", Game.fail);
                     break;
             }
             Console.ReadKey();

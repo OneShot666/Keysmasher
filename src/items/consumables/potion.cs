@@ -1,8 +1,8 @@
 using Core;
 
 // L Make it a type of consumable and add sub-types (health, energy, xp...)
-namespace Assets;
-public abstract class Potion : Consumable {
+namespace Items;
+public class Potion : Consumable {
     public int HealAmount { get; set; }
 
     public Potion(string name="Healt potion", int healAmount=50) : base(name) {

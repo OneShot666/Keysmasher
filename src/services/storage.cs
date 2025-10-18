@@ -1,31 +1,42 @@
-using System.Text.Json;
-using Assets;
+using Items;
 
-// . Use [Security] to encrypt items json file
-// ! Find a place to stock items objects then instance this class and save them
+// L (Upgrade/Create another static class) to also have list of ennemies
 namespace Services;
-public static class LocalItemStorage {
-    private static readonly string item_folder = Path.Combine("Data", "Items");
+public static class ItemStorage {                                               // Manager/Library of items
+    public static List<Item> AllItems = new List<Item>() {
+        // Armors
+        new Shield("Wooden shield", 3),
+        new Shield("Iron shield", 5),
+        // Consumables
+        new Potion("Small heal potion", 25),
+        new Potion("Middle heal potion", 50),
+        new Potion("Big heal potion", 75),
+        new Potion("Giant heal potion", 100),
+        // Jewels
+        new Amulet("Amulet of luck", 5),
+        // Weapons
+        new Axe("Axe", 6),
+        new Spear("Spear", 5),
+        new Sword("Sword", 7),
+    };
 
-    public static List<Item> LoadAllItems() {
-        var items = new List<Item>();
-        if (!Directory.Exists(item_folder)) return items;
-
-        foreach (var file in Directory.GetFiles(item_folder, "*.json")) {
-            try {
-                string json = File.ReadAllText(file);
-                var item = JsonSerializer.Deserialize<Item>(json);
-                if (item != null) items.Add(item);
-            } catch (Exception e) {
-                Console.WriteLine($"Error while loading item : {e.Message}");
-            }
-        }
-        return items;
+    public static void AddItem(Item item) {
+        if (AllItems.Any(i => i.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase))) return;
+        AllItems.Add(item);                                                   // Add if doesn't exists
     }
 
-    public static void SaveItem(Item item) {                                    // ? Move in server.cs
-        Directory.CreateDirectory(item_folder);                                 // Create directory if doesn't exists
-        string path = Path.Combine(item_folder, $"{item.Name}.json");
-        File.WriteAllText(path, JsonSerializer.Serialize(item));
+    public static void RemoveItem(string name) {
+        var item = GetItemByName(name);
+        if (item != null) AllItems.Remove(item);                                // Remove if exists
     }
+
+    public static Item? GetItemByName(string name)
+        => AllItems.FirstOrDefault(i => i.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+    public static List<Item>? GetItemsByType(ItemType type)
+        => AllItems.Where(i => i.Type == type).ToList();
+
+    public static List<Item>? GetItemsByEquipementType(EquipementType equipType)
+        => AllItems.Where(i => i.SlotType != null && i.SlotType == equipType)
+            .Cast<Item>().ToList();
 }

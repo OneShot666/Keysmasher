@@ -12,6 +12,9 @@ public class Game {                                                             
     private readonly int min_username = 3;
     private readonly int max_username = 15;
     private readonly int min_password = 6;                                      // No max lenght for password
+    public static ConsoleColor success = ConsoleColor.Green;                    // For colored messages
+    public static ConsoleColor warning = ConsoleColor.Yellow;
+    public static ConsoleColor fail = ConsoleColor.Red;
 
     public void Main() {
         new Game().Menu();
@@ -45,7 +48,7 @@ public class Game {                                                             
                     case 2: LoadUser(); break;
                     case 3: Quit(); return;
                     default:
-                        WriteColoredMessage("\nIncorrect choice !");
+                        WriteColoredMessage("\nIncorrect choice !", fail);
                         break;
                 }
             } else {                                                            // If connected
@@ -58,7 +61,7 @@ public class Game {                                                             
                     case 6: Save(); break;
                     case 7: Quit(); return;
                     default:
-                        WriteColoredMessage("\nIncorrect choice !");
+                        WriteColoredMessage("\nIncorrect choice !", fail);
                         break;
                 }
             }
@@ -71,8 +74,7 @@ public class Game {                                                             
             Console.Write("\nUsername : ");
             user_name = Console.ReadLine()?.Trim() ?? "";
             if (user_name.Length < min_username || user_name.Length > max_username)
-                WriteColoredMessage("Username must contain between 3 and 15 characters!",
-                    ConsoleColor.Yellow);
+                WriteColoredMessage("Username must contain between 3 and 15 characters!", warning);
         } while (user_name.Length < min_username || user_name.Length > max_username);
     }
 
@@ -87,7 +89,7 @@ public class Game {                                                             
 
                 if (key.Key == ConsoleKey.Enter) {                              // Confirm password
                     if (password.Length < min_password)
-                        WriteColoredMessage("\nPassword is too short !", ConsoleColor.Yellow);
+                        WriteColoredMessage("\nPassword is too short !", warning);
                     break;
                 } else if (key.Key == ConsoleKey.Backspace) {                   // Remove last char
                     if (password.Length > 0) {
@@ -121,7 +123,7 @@ public class Game {                                                             
                 confirm =  AskHiddenPassword("\nConfirm password  : ");
 
                 if (password != confirm)
-                    WriteColoredMessage("Passwords doesn't match, please try again.\n", ConsoleColor.Yellow);
+                    WriteColoredMessage("Passwords doesn't match, please try again.\n", warning);
             } while (password != confirm);
 
             Save();                                                             // Save current user before
@@ -145,9 +147,9 @@ public class Game {                                                             
             gameplay.player = server.GetOnlinePlayerByName(existing.Username);
             if (gameplay.player == null) gameplay.player = new Player(user_name, user.id);  // Shouldn't happen
             gameplay.save = server.GetOnlineGameByPlayerId(gameplay.player.id);
-            WriteColoredMessage("\nConnection successful !", ConsoleColor.Green);
+            WriteColoredMessage("\nConnection successful !", success);
             gameplay.player.Present();
-        } else WriteColoredMessage("\nIncorrect password !");
+        } else WriteColoredMessage("\nIncorrect password !", fail);
     }
 
     private void LoadUser() {
@@ -156,7 +158,7 @@ public class Game {                                                             
         string name = (local_user == null) ? user_name : local_user.Username;   // User and player should have same name
         User? existing = server.GetOnlineUserByUsername(name);
         if (local_user != null && user != null && local_user.Username == user.Username) // If already connected
-            WriteColoredMessage($"You're already connected as '{user_name}'!", ConsoleColor.Yellow);
+            WriteColoredMessage($"You're already connected as '{user_name}'!", warning);
         else if (existing != null) ConnectProfile(existing);
         else if (local_user != null && player != null) {                        // If no online save, load local save
             string password = AskHiddenPassword();
@@ -167,10 +169,10 @@ public class Game {                                                             
                 gameplay.player = player;
                 gameplay.save = save;
                 gameplay.enemy = enemy;
-                WriteColoredMessage("\nNo online save found, loaded local save.", ConsoleColor.Yellow);
+                WriteColoredMessage("\nNo online save found, loaded local save.", warning);
                 gameplay.player.Present();
             } else WriteColoredMessage("\nIncorrect password !");
-        } else WriteColoredMessage($"No profile with username '{name}' found.", ConsoleColor.Yellow);
+        } else WriteColoredMessage($"No profile with username '{name}' found.", warning);
     }
 
     private (User?, Player?, Save?, Enemy?) LoadLocal() {                       // Return instances of local user json files
@@ -184,14 +186,14 @@ public class Game {                                                             
             Enemy? enemy = server.LoadLocalEnemy(user_name);
             return (user, player, save, enemy);
         } catch (Exception e) {
-            WriteColoredMessage($"\nError while reading local save : {e.Message}");
+            WriteColoredMessage($"\nError while reading local save : {e.Message}", fail);
             return empty;
         }
     }
 
     private void Play() {
         if (gameplay.player == null) {
-            WriteColoredMessage("\nYou're not connected !", ConsoleColor.Yellow);
+            WriteColoredMessage("\nYou're not connected !", warning);
             Console.WriteLine("Please connect with 'Create an account' [1] " +
                 "or 'Load an account' [2] to play.");
             return;
@@ -206,7 +208,7 @@ public class Game {                                                             
         List<Player>? topPlayers = server.GetTopPlayers(limit);
 
         if (topPlayers == null || topPlayers.Count == 0) {
-            WriteColoredMessage("\nNo player found for leaderboard.", ConsoleColor.Yellow);
+            WriteColoredMessage("\nNo player found for leaderboard.", warning);
             Console.WriteLine("Save your progress and become Top 1 !");
             return;
         }
@@ -222,8 +224,8 @@ public class Game {                                                             
         if (gameplay.player != null) {
             bool synced = server.IsPlayerSynced(gameplay.player);               // Check if player is up-to-date
             if (!synced) WriteColoredMessage("Your online data is out of date!" +
-                "\nRemember to save [6] to synchronize your progress.", ConsoleColor.Yellow);
-            else WriteColoredMessage("Profile is updated", ConsoleColor.Green);
+                "\nRemember to save [6] to synchronize your progress.", warning);
+            else WriteColoredMessage("Profile is updated", success);
         }
     }
 
@@ -241,25 +243,25 @@ public class Game {                                                             
             server.SaveLocalPlayer(user, gameplay.player);
             server.SaveLocalGame(user, gameplay.save);
             server.SaveLocalEnemy(user, gameplay.enemy);
-            WriteColoredMessage("Local save complete !", ConsoleColor.Green);
+            WriteColoredMessage("Local save complete !", success);
         } catch (Exception e) {
-            WriteColoredMessage($"Error while saving : {e.Message}");
+            WriteColoredMessage($"Error while saving : {e.Message}", fail);
         }
     }
 
     private void SaveOnline() {                                                 // Send json files in database
         var (local_user, player, save, enemy) = LoadLocal();
         if (local_user == null)
-            WriteColoredMessage("No local save for now.", ConsoleColor.Yellow);
+            WriteColoredMessage("No local save for now.", warning);
         else {
             try {
                 server.SaveOnlineUser(local_user);
                 if (player != null) server.SaveOnlinePlayer(player);
                 if (save != null) server.SaveOnlineGame(save);
                 if (enemy != null) server.SaveOnlineEnemy(enemy);
-                WriteColoredMessage("Online save complete !", ConsoleColor.Green);
+                WriteColoredMessage("Online save complete !", success);
             } catch (Exception e) {
-                WriteColoredMessage($"Error while saving : {e.Message}");
+                WriteColoredMessage($"Error while saving : {e.Message}", fail);
             }
         }
     }
@@ -268,7 +270,7 @@ public class Game {                                                             
         await server.CleanOrphanEnemiesAsync();
     }
 
-    public static void WriteColoredMessage(string message, ConsoleColor color = ConsoleColor.Red) {
+    public static void WriteColoredMessage(string message, ConsoleColor color = ConsoleColor.White) {
         Console.ForegroundColor = color;
         Console.WriteLine(message);
         Console.ResetColor();

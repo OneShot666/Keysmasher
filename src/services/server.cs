@@ -2,6 +2,7 @@ using MongoDB.Driver;
 using MongoDB.Bson;
 using Gameplay;
 using Security;
+using Items;
 using Core;
 
 namespace Services;
@@ -10,31 +11,34 @@ public class ServerService {
     private string db_name = "KeySmasher";
     // private string db_name = "FakeDatabase";                                 // To test offline mode
     private readonly string save_folder = "Saves";
+    private readonly string item_folder = Path.Combine("Data", "Items");
     private readonly IMongoDatabase? _database;
     private IMongoCollection<User>? _users { get; }
     private IMongoCollection<Save>? _saves { get; }
     private IMongoCollection<Player>? _players { get; }
     private IMongoCollection<Enemy>? _enemies { get; }
-    private ConsoleColor success = ConsoleColor.Green;                          // For success messages
+    private IMongoCollection<Item>? _items { get; }
+    public List<Item>? _localItems { get; }                                     // L Add same thing for enemies
     private readonly ReplaceOptions options = new ReplaceOptions { IsUpsert = true };   // Insert if doesn't exists
 
     public ServerService() {                                                    // Try to connect at launch
-        Directory.CreateDirectory(save_folder);                                 // Create directory if doesn't exists
+        Directory.CreateDirectory(save_folder);                                 // Create directories if doesn't exists
+        Directory.CreateDirectory(item_folder);
 
         Console.WriteLine("Connecting to database...");
         var collections = new List<string>();
         try {
             var client = new MongoClient("mongodb://localhost:27017");
             if (!DatabaseExists(client, db_name)) {                             // Try access collections
-                Game.WriteColoredMessage("Connection to database failed !");
+                Game.WriteColoredMessage("Connection to database failed !", Game.fail);
                 return;
             }
             _database = client.GetDatabase(db_name);
             collections = _database.ListCollectionNames().ToList();
             is_connected = true;
-            Game.WriteColoredMessage("Connection to database established !", success);
+            Game.WriteColoredMessage("Connection to database established !", Game.success);
         } catch (Exception e) {
-            Game.WriteColoredMessage($"Error while connecting to server : {e.Message}");
+            Game.WriteColoredMessage($"Error while connecting to server : {e.Message}", Game.fail);
         }
 
         if (!is_connected || _database == null) return;                         // Offline mode (don't load db)
@@ -42,11 +46,15 @@ public class ServerService {
         if (!collections.Contains("Saves")) _database.CreateCollection("Saves");
         if (!collections.Contains("Players")) _database.CreateCollection("Players");
         if (!collections.Contains("Enemies")) _database.CreateCollection("Enemies");
+        if (!collections.Contains("Items")) _database.CreateCollection("Items");
 
         _users = _database.GetCollection<User>("Users");
         _saves = _database.GetCollection<Save>("Saves");
         _players = _database.GetCollection<Player>("Players");
         _enemies = _database.GetCollection<Enemy>("Enemies");
+        _items = _database.GetCollection<Item>("Items");
+
+        CreateAllLocalItems();
     }
 
     public static bool DatabaseExists(IMongoClient client, string dbName) {     // Check it's the right database
@@ -106,7 +114,7 @@ public class ServerService {
         if (is_connected || _saves == null) return;
         var filter = Builders<Save>.Filter.Eq(p => p.PlayerId, save.PlayerId);
         _saves.ReplaceOne(filter, save, options);
-        Game.WriteColoredMessage("Save updated !", success);
+        Game.WriteColoredMessage("Save updated !", Game.success);
     }
 
     /* ----- LEADERBOARD ----- */
@@ -147,7 +155,7 @@ public class ServerService {
         if (is_connected || _players == null) return;
         var filter = Builders<Player>.Filter.Eq(p => p.UserId, player.UserId);
         _players.ReplaceOne(filter, player, options);
-        Game.WriteColoredMessage($"Profile '{player.Name}' updated !", success);
+        Game.WriteColoredMessage($"Profile '{player.Name}' updated !", Game.success);
     }
 
     /* ----- ENEMIES ----- */
@@ -172,7 +180,7 @@ public class ServerService {
 
     public void SaveOnlineEnemy(Enemy enemy) {
         if (is_connected || _enemies == null) return;
-        var filter = Builders<Enemy>.Filter.Eq(p => p.id, enemy.id);
+        var filter = Builders<Enemy>.Filter.Eq(e => e.id, enemy.id);
         _enemies.ReplaceOne(filter, enemy, options);
     }
 
@@ -183,9 +191,39 @@ public class ServerService {
                 .Project(save => save.EnemyId).ToListAsync();                   // Get all enemies in saves
             var filter = Builders<Enemy>.Filter.Nin(e => e.id, usedEnemyIds);   // 'Nin': Not in
             var result = await _enemies.DeleteManyAsync(filter);                // Delete all at once
-            Game.WriteColoredMessage($"Database cleaned !", ConsoleColor.Green);
+            Game.WriteColoredMessage($"Database cleaned !", Game.success);
         } catch (Exception ex) {
-            Game.WriteColoredMessage($"Error while cleaning database : {ex.Message}");
+            Game.WriteColoredMessage($"Error while cleaning database : {ex.Message}", Game.fail);
         }
+    }
+
+    /* ----- ITEMS ----- */
+    public Item? GetOnlineItemById(ObjectId itemId) {                          // Load item
+        return is_connected ? _items.Find(i => i.id == itemId).FirstOrDefault() : null;
+    }
+
+    public void CreateAllLocalItems() {
+        foreach (Item item in ItemStorage.AllItems) SaveLocalItem(item);        // Save all items locally
+    }
+
+    public Item? LoadLocalItem(string item_name) {
+        if (item_name == null) return null;
+        string path = Path.Combine(item_folder, $"{item_name}.json");
+        if (!File.Exists(path)) return null;                                    // If local save doesn't exists
+        string content = File.ReadAllText(path);
+        return CryptoUtils.DecryptSave<Item>(content);                          // Get item instance
+    }
+
+    public void SaveLocalItem(Item? item) {
+        if (item == null) return;
+        string path = Path.Combine(item_folder, $"{item.Name}.json");
+        string json = CryptoUtils.EncryptSave(item);
+        File.WriteAllText(path, json);
+    }
+
+    public void SaveOnlineItem(Item item) {
+        if (!is_connected || _items == null) return;
+        var filter = Builders<Item>.Filter.Eq(i => i.id, item.id);
+        _items.ReplaceOne(filter, item, options);
     }
 }

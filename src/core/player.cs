@@ -1,9 +1,8 @@
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
-using Assets;
+using Items;
 
-// ! Create specific items
-// ! Add slot system for equipping items (weapon, shield, amulet)
+// ... Check if items json files are create at launch
 // ! Add weapon attack to basic attack of player (ex: 5 + 7)
 // ! Add shield defense to basic defense of player (ex: 2 + 3)
 // ! Add amulet to increase player's luck (chance of potion for now)

@@ -1,4 +1,4 @@
-namespace Assets;
+namespace Items;
 public abstract class Armor : Item {
     public int Defense { get; set; }
 
