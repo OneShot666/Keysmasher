@@ -1,6 +1,6 @@
 namespace Items;
 public enum EquipementType {
-    Weapon,
+    Amulet,
     Shield,
-    Amulet
+    Weapon,
 }

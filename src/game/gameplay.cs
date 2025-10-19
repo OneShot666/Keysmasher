@@ -1,6 +1,9 @@
 ﻿using MongoDB.Bson;
+using Services;
+using Items;
 using Core;
 
+// . Add option on 'Show profile' choice to equip/unequip items
 // ? Make StartCombat a [Services] class ?
 namespace Gameplay;
 public class Gameplay {                                                         // Manage player
@@ -55,41 +58,29 @@ public class Gameplay {                                                         
         if (save != null) save.EnemyId = enemy.id;                              // Add enemy id in save
         Console.WriteLine($"\nA '{enemy.Name}' appears ! (HP {enemy.Hp})");
 
-        var rnd = new Random();
         while (enemy.Hp > 0 && player.Hp > 0) {
             Thread.Sleep(1000);                                                 // Wait a second
             Console.WriteLine($"\n{player.Name} HP: {player.Hp}/{player.MaxHp}" +
                 $" | {enemy.Name} HP: {enemy.Hp}/{enemy.MaxHp}");
-            Console.WriteLine("1 Attack  2 Defend  3 Heal  4 Flee");
+            Console.WriteLine("1 - Attack");
+            Console.WriteLine("2 - Defend");
+            Console.WriteLine("3 - Heal");
+            Console.WriteLine("4 - Flee");
             int action = AskIntChoice("Action : ");
             Console.WriteLine();
 
             switch (action) {
-                case 1:
-                    int dmg = player.GetRandomDamage(4);
-                    Console.WriteLine($"You attack and inflict {dmg} damage.");
-                    enemy.TakeDamage(dmg);
-                    break;
-                case 2:
-                    player.UseDefensivePosition();
-                    break;
-                case 3:
-                    player.UsePotion();
-                    break;
-                case 4:
-                    if (rnd.NextDouble() < 0.5) {                               // fifty-fifty chance to flee
-                        Console.WriteLine("[Success] You escaped the combat !");
-                        if (save != null) save.EnemyId = ObjectId.Empty;        // Remove enemy id if fled
-                        return;
-                    } else Console.WriteLine("[Fail] The escape failed!");
-                    break;
+                case 1: PlayerAttack(); break;
+                case 2: player.UseDefensivePosition(); break;
+                case 3: player.UsePotion(); break;
+                case 4: PlayerFlee(); break;
                 default:
-                    Console.WriteLine("Action not recognized.");
+                    Game.WriteColoredMessage("Incorrect action !", Game.fail);
                     continue;
             }
 
             if (enemy.Hp <= 0) {                                                // Check enemy still alive
-                Console.WriteLine($"You defeated '{enemy.Name}' !");
+                Game.WriteColoredMessage($"You defeated '{enemy.Name}' !", Game.success);
                 if (save != null) save.EnemyId = ObjectId.Empty;                // Remove enemy id if defeated
                 SpawnLoot();
                 player.LootEnemy(enemy);
@@ -104,34 +95,38 @@ public class Gameplay {                                                         
         }
     }
 
-    public void SpawnLoot()
-    {
+    public void PlayerAttack() {
+        if (player == null || enemy == null) return;
+        int dmg = player.GetRandomDamage(4);
+        Console.WriteLine($"You attack and inflict {dmg} damage.");
+        enemy.TakeDamage(dmg);
+    }
+
+    public void PlayerFlee() {
+        if (player == null || enemy == null) return;
+        var rnd = new Random();
+        if (rnd.NextDouble() < 0.5) {                                           // fifty-fifty chance to flee
+            Game.WriteColoredMessage("You escaped the combat !", Game.success);
+            enemy = null;
+        } else Game.WriteColoredMessage("The escape failed!", Game.fail);
+    }
+
+    public void SpawnLoot() {                                                   // L Move in Player.SpawnLoot()
         if (player == null) return;
         var rnd = new Random();
 
-        // ---- Drop potion ----
-        double potionBaseDrop = 0.4;          // 40 % chance to drop a potion
-        double potionAmuletBonus = 0.2;       // +20 % if amulet (→ 60 %)
-        double potionChance = potionBaseDrop;
-
-        if (player.Inventory.Contains("Amulet"))
-            potionChance += potionAmuletBonus;
-
-        if (rnd.NextDouble() < potionChance)
-        {
-            Console.WriteLine("You find a 'Potion' on the enemy !");
-            player.CollectItem("Potion");
-            if (player.Inventory.Contains("Amulet"))
-                Console.WriteLine("Your amulet helped you find this potion!");
+        double potionChance = 0.25;                                             // 25 % chance to drop a potion
+        if (rnd.NextDouble() < potionChance + player.GetPercentLuck()){
+            Potion potion = (Potion)ItemStorageService.GetItemsByType<Potion>()![0];
+            player.CollectItem(potion);
+            Console.WriteLine($"You find a '{potion.Name}' on the enemy !");
         }
 
-        // ---- Drop amulet ----
-        // Amulet is rarest : 20 % chance to drop, and only one time
-        if (!player.Inventory.Contains("Amulet") && rnd.NextDouble() < 0.2)
-        {
-            Console.WriteLine("You found a mysterious 'Amulet' !");
-            player.CollectItem("Amulet");
+        double amuletChance = 0.1;                                              // 10 % chance to drop an amulet
+        if (rnd.NextDouble() < amuletChance + player.GetPercentLuck()) {
+            Amulet amulet = (Amulet)ItemStorageService.GetItemsByType<Amulet>()![0];
+            player.CollectItem(amulet);
+            Console.WriteLine($"You find a '{amulet.Name}' on the enemy !");
         }
     }
-
 }

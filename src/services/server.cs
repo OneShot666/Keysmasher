@@ -41,6 +41,8 @@ public class ServerService {
             Game.WriteColoredMessage($"Error while connecting to server : {e.Message}", Game.fail);
         }
 
+        CreateAllLocalItems();
+
         if (!is_connected || _database == null) return;                         // Offline mode (don't load db)
         if (!collections.Contains("Users")) _database.CreateCollection("Users");
         if (!collections.Contains("Saves")) _database.CreateCollection("Saves");
@@ -53,8 +55,6 @@ public class ServerService {
         _players = _database.GetCollection<Player>("Players");
         _enemies = _database.GetCollection<Enemy>("Enemies");
         _items = _database.GetCollection<Item>("Items");
-
-        CreateAllLocalItems();
     }
 
     public static bool DatabaseExists(IMongoClient client, string dbName) {     // Check it's the right database
@@ -203,7 +203,7 @@ public class ServerService {
     }
 
     public void CreateAllLocalItems() {
-        foreach (Item item in ItemStorage.AllItems) SaveLocalItem(item);        // Save all items locally
+        foreach (Item item in ItemStorageService.AllItems) SaveLocalItem(item);        // Save all items locally
     }
 
     public Item? LoadLocalItem(string item_name) {
@@ -217,6 +217,7 @@ public class ServerService {
     public void SaveLocalItem(Item? item) {
         if (item == null) return;
         string path = Path.Combine(item_folder, $"{item.Name}.json");
+        if (File.Exists(path)) return;                                          // Don't overwrite existing items
         string json = CryptoUtils.EncryptSave(item);
         File.WriteAllText(path, json);
     }

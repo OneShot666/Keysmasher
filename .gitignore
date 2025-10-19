@@ -14,6 +14,7 @@ mono_crash.*
 # Local files
 [Kk]eysmasherAPI/
 [Kk]eysmasherWeb/
+[Dd]ata/
 [Ss]aves/
 
 # Build results

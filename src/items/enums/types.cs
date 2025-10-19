@@ -1,7 +1,7 @@
 namespace Items;
 public enum ItemType {
-    Weapon,
     Armor,
+    Consumable,
     Jewel,
-    Consumable
+    Weapon,
 }

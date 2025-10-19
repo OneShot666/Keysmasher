@@ -16,8 +16,8 @@ public class Game {                                                             
     public static ConsoleColor warning = ConsoleColor.Yellow;
     public static ConsoleColor fail = ConsoleColor.Red;
 
-    public void Main() {
-        new Game().Menu();
+    public Game() {
+        Menu();
     }
 
     private void Menu() {
@@ -25,7 +25,7 @@ public class Game {                                                             
 
         while (true) {
             Console.Clear();                                                    // Messages from server won't be visible
-            Console.WriteLine("===== MENU " + (server.is_connected ? "" : " [OFFLINE]") + " =====");
+            Console.WriteLine($"===== {game_name} {(server.is_connected ? "" : " [OFFLINE]")} =====");
             if (user == null) {
                 Console.WriteLine("1 - Create an account");
                 Console.WriteLine("2 - Load an account");
@@ -125,6 +125,7 @@ public class Game {                                                             
                 if (password != confirm)
                     WriteColoredMessage("Passwords doesn't match, please try again.\n", warning);
             } while (password != confirm);
+            Console.WriteLine();
 
             Save();                                                             // Save current user before
 
@@ -171,7 +172,7 @@ public class Game {                                                             
                 gameplay.enemy = enemy;
                 WriteColoredMessage("\nNo online save found, loaded local save.", warning);
                 gameplay.player.Present();
-            } else WriteColoredMessage("\nIncorrect password !");
+            } else WriteColoredMessage("\nIncorrect password !", fail);
         } else WriteColoredMessage($"No profile with username '{name}' found.", warning);
     }
 
