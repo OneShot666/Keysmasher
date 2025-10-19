@@ -1,13 +1,20 @@
 using Items;
+using MongoDB.Bson;
 
 namespace Services;
 public class InventoryService {                                                 // Manager player's inventory
+    public List<ObjectId> _ItemsIDs;                                            // List of items' ids
     private List<Item> _Items;                                                  // List of items in inventory
     public int Capacity { get; private set; }                                   // Max items in inventory
 
     public InventoryService(int capacity=5) {
+        _ItemsIDs = new List<ObjectId>();
         _Items = new List<Item>();
         Capacity = capacity;
+    }
+
+    public void SetItems(List<Item> Items) {
+        _Items = Items;
     }
 
     public bool IsFull() => _Items.Count >= Capacity;

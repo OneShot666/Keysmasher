@@ -4,7 +4,7 @@ using MongoDB.Bson;
 namespace Core;
 public abstract class Entity {
     [BsonId]                                                                    // Mongo primary key type
-    public ObjectId id { get; set; } = ObjectId.GenerateNewId();
+    public ObjectId id { get; set; }
     public string Name { get; set; } = "Entity";
     public int Level { get; set; } = 1;
     public int Hp { get; set; } = 100;
@@ -18,11 +18,11 @@ public abstract class Entity {
     }
 
     public virtual void Present() {
-        Console.WriteLine($"Name      : {Name}");
-        Console.WriteLine($"Level     : {Level}");
-        Console.WriteLine($"HP        : {Hp}/{MaxHp}");
-        Console.WriteLine($"Attack    : {Attack}");
-        Console.WriteLine($"Defense   : {Defense}");
+        Console.WriteLine($"Name    : {Name}");
+        Console.WriteLine($"Level   : {Level}");
+        Console.WriteLine($"HP      : {Hp}/{MaxHp}");
+        Console.WriteLine($"Attack  : {Attack}");
+        Console.WriteLine($"Defense : {Defense}");
     }
 
     public virtual int GetRandomDamage(int bonus = 0) {

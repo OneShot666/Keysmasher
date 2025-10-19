@@ -17,6 +17,7 @@ public class Game {                                                             
     public static ConsoleColor fail = ConsoleColor.Red;
 
     public Game() {
+        try { MongoMappingService.RegisterClassMaps(); } catch {}               // Register bson class maps
         Menu();
     }
 
@@ -24,8 +25,8 @@ public class Game {                                                             
         Console.Title = game_name;                                              // Rename console
 
         while (true) {
-            Console.Clear();                                                    // Messages from server won't be visible
-            Console.WriteLine($"===== {game_name} {(server.is_connected ? "" : " [OFFLINE]")} =====");
+            // Console.Clear();                                                    // Messages from server won't be visible
+            Console.WriteLine($"\n===== {game_name} {(server.is_connected ? "" : " [OFFLINE] ")}=====");
             if (user == null) {
                 Console.WriteLine("1 - Create an account");
                 Console.WriteLine("2 - Load an account");
@@ -133,8 +134,9 @@ public class Game {                                                             
             string hashed = CryptoUtils.HashPassword(password, salt);
             user = new User(user_name, hashed, salt);
             gameplay.player = new Player(user_name, user.id);
+            gameplay.SetPlayerItemsAsync(server).GetAwaiter().GetResult();
             gameplay.save = new Save(gameplay.player.id);
-            SaveLocal();                                                        // Only local save at first
+            SaveLocal().GetAwaiter().GetResult();                               // Only local save at first
             gameplay.player.Present();
         }
     }
@@ -168,7 +170,7 @@ public class Game {                                                             
                 if (user != null) Save();                                       // Save previous user if exists
                 user = local_user;
                 gameplay.player = player;
-                gameplay.save = save;
+                gameplay.save = (save == null) ? new Save(gameplay.player.id) : save;
                 gameplay.enemy = enemy;
                 WriteColoredMessage("\nNo online save found, loaded local save.", warning);
                 gameplay.player.Present();
@@ -233,34 +235,36 @@ public class Game {                                                             
     public void Save() {
         if (gameplay.player == null) return;
 
-        SaveLocal();                                                            // Instances to json
-        SaveOnline();                                                           // Json to database
-        _ = CleanDatabase();
+        SaveLocal().GetAwaiter().GetResult();                                   // Instances to json
+        SaveOnline().GetAwaiter().GetResult();                                  // Json to database
+        // _ = CleanDatabase().GetAwaiter().GetResult();
+        Console.Out.Flush();                                                    // Display asynchrone messages
     }
 
-    private void SaveLocal() {                                                  // Create or update json file (player data)
+    private async Task SaveLocal() {                                            // Create or update json file (player data)
         try {
-            server.SaveLocalUser(user);
-            server.SaveLocalPlayer(user, gameplay.player);
-            server.SaveLocalGame(user, gameplay.save);
-            server.SaveLocalEnemy(user, gameplay.enemy);
+            await server.SaveLocalUser(user);
+            await server.SaveLocalPlayer(user, gameplay.player);
+            await server.SaveLocalGame(user, gameplay.save);
+            await server.SaveLocalEnemy(user, gameplay.enemy);
             WriteColoredMessage("Local save complete !", success);
         } catch (Exception e) {
             WriteColoredMessage($"Error while saving : {e.Message}", fail);
         }
     }
 
-    private void SaveOnline() {                                                 // Send json files in database
+    private async Task SaveOnline() {                                           // Send json files in database
         var (local_user, player, save, enemy) = LoadLocal();
         if (local_user == null)
             WriteColoredMessage("No local save for now.", warning);
         else {
             try {
-                server.SaveOnlineUser(local_user);
-                if (player != null) server.SaveOnlinePlayer(player);
-                if (save != null) server.SaveOnlineGame(save);
-                if (enemy != null) server.SaveOnlineEnemy(enemy);
+                await server.SaveOnlineUser(local_user);
+                if (player != null) await server.SaveOnlinePlayer(player);
+                if (save != null) await server.SaveOnlineGame(save);
+                if (enemy != null) await server.SaveOnlineEnemy(enemy);
                 WriteColoredMessage("Online save complete !", success);
+                await Task.Delay(200);                                          // Wait for db update
             } catch (Exception e) {
                 WriteColoredMessage($"Error while saving : {e.Message}", fail);
             }

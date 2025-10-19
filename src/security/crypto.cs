@@ -2,6 +2,7 @@ using System.Text.Json.Serialization.Metadata;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Items;
+using Core;
 
 namespace Security;
 public static class CryptoUtils {                                               // Use for local saves and password hashing
@@ -21,22 +22,66 @@ public static class CryptoUtils {                                               
     }
 
     public static bool VerifyPassword(string password, string encryptSalt, string hash) {   // Check password is correct
-        return HashPassword(password, encryptSalt) == EncryptText(hash);
+        return HashPassword(password, encryptSalt) == hash;
     }
 
+    public static JsonSerializerOptions GetSerializationOptions()
+        => new JsonSerializerOptions {
+            WriteIndented = true,
+            PropertyNameCaseInsensitive = true,
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver { Modifiers = { ti => {
+                if (ti.Type == typeof(Item)) {                                  // Item polymorphism
+                    ti.PolymorphismOptions = new JsonPolymorphismOptions {
+                        TypeDiscriminatorPropertyName = "$type",
+                        IgnoreUnrecognizedTypeDiscriminators = true,
+                        DerivedTypes = {
+                            new JsonDerivedType(typeof(Shield), "Shield"),
+                            new JsonDerivedType(typeof(Potion), "Potion"),
+                            new JsonDerivedType(typeof(Amulet), "Amulet"),
+                            new JsonDerivedType(typeof(Axe), "Axe"),
+                            new JsonDerivedType(typeof(Spear), "Spear"),
+                            new JsonDerivedType(typeof(Sword), "Sword"),
+                        }
+                    };
+                }
+                if (ti.Type == typeof(Entity)) {                                // Entity polymorphism
+                    ti.PolymorphismOptions = new JsonPolymorphismOptions {
+                        TypeDiscriminatorPropertyName = "$type",
+                        IgnoreUnrecognizedTypeDiscriminators = true,
+                        DerivedTypes = {
+                            new JsonDerivedType(typeof(Player), "Player"),
+                            new JsonDerivedType(typeof(Enemy), "Enemy"),
+                        }
+                    };
+                }
+                if (ti.Type == typeof(User)) {                                  // Simple classes
+                    ti.PolymorphismOptions = new JsonPolymorphismOptions {
+                        TypeDiscriminatorPropertyName = "$type",
+                        DerivedTypes = {
+                            new JsonDerivedType(typeof(User), "User"),
+                        }
+                    };
+                }
+                if (ti.Type == typeof(Save)) {
+                    ti.PolymorphismOptions = new JsonPolymorphismOptions {
+                        TypeDiscriminatorPropertyName = "$type",
+                        DerivedTypes = {
+                            new JsonDerivedType(typeof(Save), "Save"),
+                        }
+                    };
+                }
+            }}}
+        };
+
     public static string EncryptSave<T>(T data) {
-        var options = new JsonSerializerOptions { WriteIndented = true,
-            TypeInfoResolver = new DefaultJsonTypeInfoResolver { Modifiers = {
-            ti => { if (ti.Type == typeof(Item)) {
-            ti.PolymorphismOptions ??= new JsonPolymorphismOptions {
-            TypeDiscriminatorPropertyName = "$type" }; }}}}};
+        var options = GetSerializationOptions();
         string json = JsonSerializer.Serialize(data, options);
         return EncryptText(json);
     }
 
     public static T? DecryptSave<T>(string encryptedData) {                     // Remove prints after testing
         string json = DecryptText(encryptedData);
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var options = GetSerializationOptions();
         return JsonSerializer.Deserialize<T>(json, options);
     }
 

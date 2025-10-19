@@ -1,9 +1,11 @@
 using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson.Serialization.Options;
 using MongoDB.Bson;
 using Gameplay;
 using Services;
 using Items;
 
+// ! Modify functions to add id in ItemIDs list when adding/removing items
 // ? Add energy/energyMax for player
 namespace Core;
 public class Player : Entity {
@@ -17,33 +19,48 @@ public class Player : Entity {
     public int Luck { get; set; } = 0;                                          // +X% chance (max: 100)
     public int Gold { get; set; } = 0;
     public InventoryService Inventory = new(5);
-    public Dictionary<EquipementType, Item?> EquippedItems { get; set; } = new() {
-        {EquipementType.Weapon, null}, {EquipementType.Shield, null},
-        {EquipementType.Amulet, null} };
+    [BsonDictionaryOptions(DictionaryRepresentation.Document)]
+    public Dictionary<string, Item?> EquippedItems { get; set; } = new() {      // One of each type
+        {EquipementType.Weapon.ToString(), null},
+        {EquipementType.Shield.ToString(), null},
+        {EquipementType.Amulet.ToString(), null}
+    };
 
     public override string ToString() {
         return $"Player(Name='{Name}', Level={Level}, HP={Hp}, Max HP={MaxHp}, " +
-            $"Score={Score}), Attack={Attack}, Defense={Defense}, Luck={Luck}, Gold={Gold})";
+            $"Score={Score}, Attack={Attack}, Defense={Defense}, Luck={Luck}, Gold={Gold})";
     }
 
     public Player() {                                                           // Use for local saves
+        id = ObjectId.GenerateNewId();
         Inventory.Clear();
-        CollectItem(ItemStorageService.GetItemsByType<Weapon>()![0]);           // Basic equipement
-        CollectItem(ItemStorageService.GetItemsByType<Shield>()![0]);
-        CollectItem(ItemStorageService.GetItemsByType<Potion>()![0]);
+        Weapon weapon = (Weapon)ItemStorageService.GetItemsByType<Weapon>()![0];
+        Shield shield = (Shield)ItemStorageService.GetItemsByType<Shield>()![0];
+        Potion potion = (Potion)ItemStorageService.GetItemsByType<Potion>()![0];
+        Inventory.AddItem(weapon);                                              // Basic equipement
+        Inventory.AddItem(shield);
+        Inventory.AddItem(potion);
+        EquippedItems[EquipementType.Weapon.ToString()] = weapon;
+        EquippedItems[EquipementType.Shield.ToString()] = shield;
     }
 
     public Player(string name, ObjectId user_id) {
+        id = ObjectId.GenerateNewId();
         Name = name;
         UserId = user_id;
         Inventory.Clear();
-        CollectItem(ItemStorageService.GetItemsByType<Weapon>()![0]);           // Basic equipement
-        CollectItem(ItemStorageService.GetItemsByType<Shield>()![0]);
-        CollectItem(ItemStorageService.GetItemsByType<Potion>()![0]);
+        Weapon weapon = (Weapon)ItemStorageService.GetItemsByType<Weapon>()![0];
+        Shield shield = (Shield)ItemStorageService.GetItemsByType<Shield>()![0];
+        Potion potion = (Potion)ItemStorageService.GetItemsByType<Potion>()![0];
+        Inventory.AddItem(weapon);                                              // Basic equipement
+        Inventory.AddItem(shield);
+        Inventory.AddItem(potion);
+        EquippedItems[EquipementType.Weapon.ToString()] = weapon;
+        EquippedItems[EquipementType.Shield.ToString()] = shield;
     }
 
     public override void Present() {
-        Console.WriteLine($"\nYour profile : \n");
+        Console.WriteLine("\n===== PROFILE =====\n");
         Console.WriteLine($"Name      : {Name}");
         Console.WriteLine($"Level     : {Level} ({Xp}/{MaxXp} xp)");
         Console.WriteLine($"Score     : {Score} pts");
@@ -65,21 +82,21 @@ public class Player : Entity {
 
     public int GetTotalAttack() {
         int weapon_attack = 0;
-        if (EquippedItems[EquipementType.Weapon] is Item weapon && weapon is Weapon wpn)
+        if (EquippedItems[EquipementType.Weapon.ToString()] is Item weapon && weapon is Weapon wpn)
             weapon_attack = wpn.Attack;
         return Attack + weapon_attack;
     }
 
     public int GetTotalDefense() {
         int shield_defense = 0;
-        if (EquippedItems[EquipementType.Shield] is Item shield && shield is Shield shd)
+        if (EquippedItems[EquipementType.Shield.ToString()] is Item shield && shield is Shield shd)
             shield_defense = shd.Defense;
         return Defense + shield_defense;
     }
 
     public int GetTotalLuck() {
         int amulet_luck = 0;
-        if (EquippedItems[EquipementType.Amulet] is Item amulet && amulet is Amulet mlt)
+        if (EquippedItems[EquipementType.Amulet.ToString()] is Item amulet && amulet is Amulet mlt)
             amulet_luck = mlt.Luck;
         return Luck + amulet_luck;
     }
@@ -112,7 +129,7 @@ public class Player : Entity {
     }
 
     public void UseDefensivePosition() {
-        if (EquippedItems[EquipementType.Shield] != null) {
+        if (EquippedItems[EquipementType.Shield.ToString()] != null) {
             is_defending = true;
             Console.WriteLine("You took a defensive posture : defense doubled !");
         } else Game.WriteColoredMessage("You don't have any shield equipped !", Game.warning);
@@ -158,7 +175,7 @@ public class Player : Entity {
 
     public void CollectItem(Item item) {                                        // Auto-equip if slot free
         if (!Inventory.AddItem(item)) Game.WriteColoredMessage("Inventory is full !", Game.warning);
-        if (item.SlotType != null && EquippedItems[item.SlotType.Value] == null) Equip(item);
+        if (item.SlotType != null && EquippedItems[item.SlotType.Value.ToString()] == null) Equip(item);
     }
 
     public void UseItem(Item item) {
@@ -176,21 +193,22 @@ public class Player : Entity {
             return;
         }
 
-        EquippedItems[item.SlotType.Value] = item;
+        EquippedItems[item.SlotType.Value.ToString()] = item;
         Console.WriteLine($"{item.Name} equipped on {item.SlotType.Value}.");
     }
 
     public void Unequip(EquipementType slot) {
-        if (EquippedItems[slot] != null) {
-            Console.WriteLine($"{EquippedItems[slot]!.Name} unequipped from {slot}.");
-            EquippedItems[slot] = null;
+        string value = slot.ToString();
+        if (EquippedItems[value] != null) {
+            Console.WriteLine($"{EquippedItems[value]!.Name} unequipped from {value}.");
+            EquippedItems[value] = null;
         }
     }
 
     public void LootEnemy(Enemy enemy) {
         GainXp(enemy.rewardXp);
         Gold += enemy.rewardGold;
-        Console.WriteLine($"You gained {enemy.rewardGold} coins.\nYour gold : {Gold}");
+        Console.WriteLine($"You gained {enemy.rewardGold} coins.");
     }
 
     public void Die() {

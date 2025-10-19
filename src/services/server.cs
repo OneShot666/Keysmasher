@@ -77,17 +77,17 @@ public class ServerService {
         return CryptoUtils.DecryptSave<User>(content);                          // Get user instance
     }
 
-    public void SaveLocalUser(User? user) {
+    public async Task SaveLocalUser(User? user) {
         if (user == null) return;                                               // Not connected
         string path = Path.Combine(save_folder, $"{user.Username}_user.json");
         string json = CryptoUtils.EncryptSave(user);
-        File.WriteAllText(path, json);
+        await File.WriteAllTextAsync(path, json);
     }
 
-    public void SaveOnlineUser(User user) {
-        if (is_connected || _users == null) return;
+    public async Task SaveOnlineUser(User user) {
+        if (!is_connected || _users == null) return;
         var filter = Builders<User>.Filter.Eq(u => u.id, user.id);
-        _users.ReplaceOne(filter, user, options);
+        await _users.ReplaceOneAsync(filter, user, options);
     }
 
     /* ----- SAVES (or Game in function's name) ----- */
@@ -103,33 +103,39 @@ public class ServerService {
         return CryptoUtils.DecryptSave<Save>(content);                          // Get save instance
     }
 
-    public void SaveLocalGame(User? user, Save? save) {
+    public async Task SaveLocalGame(User? user, Save? save) {
         if (user == null || save == null) return;                               // Not connected
         string path = Path.Combine(save_folder, $"{user.Username}_save.json");
         string json = CryptoUtils.EncryptSave(save);
-        File.WriteAllText(path, json);
+        await File.WriteAllTextAsync(path, json);
     }
 
-    public void SaveOnlineGame(Save save) {
-        if (is_connected || _saves == null) return;
+    public async Task SaveOnlineGame(Save save) {
+        if (!is_connected || _saves == null) return;
         var filter = Builders<Save>.Filter.Eq(p => p.PlayerId, save.PlayerId);
-        _saves.ReplaceOne(filter, save, options);
-        Game.WriteColoredMessage("Save updated !", Game.success);
+        Game.WriteColoredMessage("Save updated !", Game.success);               // !!!
+        await _saves.ReplaceOneAsync(filter, save, options);
     }
 
     /* ----- LEADERBOARD ----- */
     public List<Player>? GetTopPlayers(int limit = 5) {                         // Get top 5 players by default
-        if (is_connected || _players == null) return null;
+        if (!is_connected || _players == null) return null;
         return _players.Find(FilterDefinition<Player>.Empty)
             .SortByDescending(p => p.Score).Limit(limit).ToList();
     }
 
     /* ----- PLAYERS ----- */
     public bool IsPlayerSynced(Player localPlayer) {                            // Only compare important data
-        if (is_connected || _players == null) return false;
+        if (!is_connected || _players == null) return false;
         var dbPlayer = _players.Find(p => p.Name == localPlayer.Name).FirstOrDefault();
         if (dbPlayer == null) return false;
         return dbPlayer.Score == localPlayer.Score && dbPlayer.Level == localPlayer.Level;
+    }
+
+    public async Task<List<Item>> GetPlayerItemsAsync(Player player) {
+        var filter = Builders<Item>.Filter.In(i => i.id, player.Inventory._ItemsIDs);
+        var items = await _items.Find(filter).ToListAsync();
+        return items;
     }
 
     public Player? GetOnlinePlayerByName(string name) {                         // Load player
@@ -144,18 +150,17 @@ public class ServerService {
         return CryptoUtils.DecryptSave<Player>(content);                        // Get player instance
     }
 
-    public void SaveLocalPlayer(User? user, Player? player) {
+    public async Task SaveLocalPlayer(User? user, Player? player) {
         if (user == null || player == null) return;                             // Not connected
         string path = Path.Combine(save_folder, $"{user.Username}_player.json");
         string json = CryptoUtils.EncryptSave(player);
-        File.WriteAllText(path, json);
+        await File.WriteAllTextAsync(path, json);
     }
 
-    public void SaveOnlinePlayer(Player player) {
-        if (is_connected || _players == null) return;
+    public async Task SaveOnlinePlayer(Player player) {
+        if (!is_connected || _players == null) return;
         var filter = Builders<Player>.Filter.Eq(p => p.UserId, player.UserId);
-        _players.ReplaceOne(filter, player, options);
-        Game.WriteColoredMessage($"Profile '{player.Name}' updated !", Game.success);
+        await _players.ReplaceOneAsync(filter, player, options);
     }
 
     /* ----- ENEMIES ----- */
@@ -171,17 +176,17 @@ public class ServerService {
         return CryptoUtils.DecryptSave<Enemy>(content);                         // Get enemy instance
     }
 
-    public void SaveLocalEnemy(User? user, Enemy? enemy) {
+    public async Task SaveLocalEnemy(User? user, Enemy? enemy) {
         if (user == null || enemy == null) return;                              // Not connected
         string path = Path.Combine(save_folder, $"{user.Username}_enemy.json");
         string json = CryptoUtils.EncryptSave(enemy);
-        File.WriteAllText(path, json);
+        await File.WriteAllTextAsync(path, json);
     }
 
-    public void SaveOnlineEnemy(Enemy enemy) {
-        if (is_connected || _enemies == null) return;
+    public async Task SaveOnlineEnemy(Enemy enemy) {
+        if (!is_connected || _enemies == null) return;
         var filter = Builders<Enemy>.Filter.Eq(e => e.id, enemy.id);
-        _enemies.ReplaceOne(filter, enemy, options);
+        await _enemies.ReplaceOneAsync(filter, enemy, options);
     }
 
     public async Task CleanOrphanEnemiesAsync() {

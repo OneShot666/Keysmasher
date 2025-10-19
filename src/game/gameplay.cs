@@ -42,6 +42,12 @@ public class Gameplay {                                                         
         }
     }
 
+    public async Task SetPlayerItemsAsync(ServerService server) {
+        if (player == null) return;
+        var items = await server.GetPlayerItemsAsync(player);
+        player.Inventory.SetItems(items);
+    }
+
     public static int AskIntChoice(string question = "\nChoice : ") {           // Ask until user choose an integer
         int choice;
         string? input;
